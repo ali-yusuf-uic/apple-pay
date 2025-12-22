@@ -179,7 +179,11 @@ app.post("/api/apple-pay-session", async (req, res) => {
   try {
     const { validationURL } = req.body;
 
+    console.log("[SERVER] Apple Pay merchant validation endpoint called");
+    console.log("[SERVER] Validation URL:", validationURL);
+
     if (!validationURL) {
+      console.error("[SERVER] ERROR: Validation URL is required");
       return res.status(400).json({
         success: false,
         message: "Validation URL is required",
@@ -187,19 +191,33 @@ app.post("/api/apple-pay-session", async (req, res) => {
     }
 
     // Apple requires HTTPS POST to validationURL with merchant certificate
-    // For now, return a basic session object
-    // In production, you would use your merchant certificate here
-    console.log("Apple Pay merchant validation requested");
+    // This creates a session that Apple Pay will use for the transaction
+    // For testing purposes, return a mock session
+    
+    console.log("[SERVER] Creating mock merchant session for testing");
+    
+    // In production, you would:
+    // 1. Use your merchant certificate to sign a request
+    // 2. POST to the validationURL provided by Apple
+    // 3. Get the session from Apple's response
+    // For now, return a valid structure for Apple Pay to accept
+    
+    const mockSession = {
+      epochTimestamp: Math.floor(Date.now() / 1000) * 1000,
+      expiresAt: Math.floor(Date.now() / 1000 + 3600) * 1000,
+      merchantSessionIdentifier: "SSH-" + Math.random().toString(36).substr(2, 9),
+      nonce: Math.random().toString(36).substr(2, 16),
+      signature: "mock-signature-" + Math.random().toString(36).substr(2, 20),
+    };
+
+    console.log("[SERVER] ✓ Mock merchant session created");
 
     res.json({
       success: true,
-      merchantSession: {
-        // This would be populated with Apple's response using your certificate
-        // For testing, return a basic object
-      },
+      session: mockSession,
     });
   } catch (error) {
-    console.error("Merchant validation error:", error);
+    console.error("[SERVER] ERROR in apple-pay-session:", error);
     res.status(500).json({
       success: false,
       message: "Merchant validation failed: " + error.message,

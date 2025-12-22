@@ -144,7 +144,11 @@ async function initiateApplePayment() {
     // Handle validation event
     session.onvalidatemerchant = async (event) => {
       console.log("[PAYMENT] onvalidatemerchant event triggered");
+      console.log("[PAYMENT] Validation URL from Apple:", event.validationURL);
+      
       try {
+        showLoading("Validating merchant...");
+        
         const response = await fetch("/api/apple-pay-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -157,15 +161,19 @@ async function initiateApplePayment() {
         const data = await response.json();
         console.log("[PAYMENT] Merchant validation response:", data);
         
-        if (data.session) {
+        if (data.success && data.session) {
           console.log("[PAYMENT] ✓ Merchant validation successful");
+          console.log("[PAYMENT] Completing merchant validation with session:", data.session);
           session.completeMerchantValidation(data.session);
+          hideLoading();
         } else {
-          console.error("[PAYMENT] Invalid merchant session response");
+          console.error("[PAYMENT] Invalid merchant session response:", data);
+          hideLoading();
           session.abort();
         }
       } catch (error) {
         console.error("[PAYMENT] Merchant validation error:", error);
+        hideLoading();
         session.abort();
       }
     };
