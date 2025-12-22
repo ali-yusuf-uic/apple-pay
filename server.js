@@ -37,22 +37,44 @@ const eazypayBaseUrl =
   process.env.EAZYPAY_BASE_URL ||
   "https://eazypay.gateway.mastercard.com/api/rest/version/100";
 
+console.log("[SERVER] Eazypay Configuration:");
+console.log("[SERVER] - Merchant ID:", eazypayMerchantId ? "SET" : "NOT SET");
+console.log("[SERVER] - Password:", eazypayPassword ? "SET" : "NOT SET");
+console.log("[SERVER] - Base URL:", eazypayBaseUrl);
+
 // Create Eazypay session endpoint
 app.get("/api/create-session", async (req, res) => {
   try {
+    console.log("[SERVER] /api/create-session called");
     const { amount, currency = "BHD" } = req.query;
+    console.log("[SERVER] Request params - amount:", amount, "currency:", currency);
 
     if (!amount) {
+      console.error("[SERVER] ERROR: Amount is missing");
       return res.status(400).json({
         success: false,
         message: "Amount is required",
       });
     }
 
+    // Check if Eazypay credentials are configured
+    if (!eazypayMerchantId || !eazypayPassword) {
+      console.error("[SERVER] ERROR: Eazypay credentials not configured");
+      console.error("[SERVER] - EAZYPAY_MERCHANT_ID:", eazypayMerchantId ? "SET" : "MISSING");
+      console.error("[SERVER] - EAZYPAY_PASSWORD:", eazypayPassword ? "SET" : "MISSING");
+      return res.status(500).json({
+        success: false,
+        message: "Eazypay credentials not configured. Please set EAZYPAY_MERCHANT_ID and EAZYPAY_PASSWORD environment variables.",
+      });
+    }
+
     const username = `merchant.${eazypayMerchantId}`;
     const orderId = "APPLEPAY-" + Math.floor(Date.now() / 1000);
-
     const url = `${eazypayBaseUrl}/merchant/${eazypayMerchantId}/session`;
+
+    console.log("[SERVER] Creating Eazypay session:");
+    console.log("[SERVER] - URL:", url);
+    console.log("[SERVER] - Order ID:", orderId);
 
     const payload = {
       apiOperation: "INITIATE_CHECKOUT",
@@ -78,6 +100,7 @@ app.get("/api/create-session", async (req, res) => {
       "Basic " +
       Buffer.from(`${username}:${eazypayPassword}`).toString("base64");
 
+    console.log("[SERVER] Sending request to Eazypay API...");
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -87,10 +110,14 @@ app.get("/api/create-session", async (req, res) => {
       body: JSON.stringify(payload),
     });
 
+    console.log("[SERVER] Eazypay response status:", response.status);
     const data = await response.json();
+    console.log("[SERVER] Eazypay response data:", JSON.stringify(data, null, 2));
 
     if (!response.ok) {
-      console.error("Eazypay error:", data);
+      console.error("[SERVER] ERROR: Eazypay API returned error");
+      console.error("[SERVER] Status:", response.status);
+      console.error("[SERVER] Error details:", data);
       return res.status(response.status).json({
         success: false,
         message: "Failed to create Eazypay session",
@@ -98,6 +125,17 @@ app.get("/api/create-session", async (req, res) => {
       });
     }
 
+    if (!data.session?.id) {
+      console.error("[SERVER] ERROR: No session ID in Eazypay response");
+      console.error("[SERVER] Response:", data);
+      return res.status(500).json({
+        success: false,
+        message: "Eazypay response missing session ID",
+        error: data,
+      });
+    }
+
+    console.log("[SERVER] ✓ Session created successfully:", data.session.id);
     res.json({
       success: true,
       sessionId: data.session?.id,
@@ -110,7 +148,10 @@ app.get("/api/create-session", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Session creation error:", error);
+    console.error("[SERVER] ========== SESSION CREATION ERROR ==========");
+    console.error("[SERVER] Error message:", error.message);
+    console.error("[SERVER] Error stack:", error.stack);
+    console.error("[SERVER] Full error:", error);
     res.status(500).json({
       success: false,
       message: "Error creating session: " + error.message,
