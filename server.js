@@ -47,7 +47,12 @@ app.get("/api/create-session", async (req, res) => {
   try {
     console.log("[SERVER] /api/create-session called");
     const { amount, currency = "BHD" } = req.query;
-    console.log("[SERVER] Request params - amount:", amount, "currency:", currency);
+    console.log(
+      "[SERVER] Request params - amount:",
+      amount,
+      "currency:",
+      currency
+    );
 
     if (!amount) {
       console.error("[SERVER] ERROR: Amount is missing");
@@ -60,11 +65,18 @@ app.get("/api/create-session", async (req, res) => {
     // Check if Eazypay credentials are configured
     if (!eazypayMerchantId || !eazypayPassword) {
       console.error("[SERVER] ERROR: Eazypay credentials not configured");
-      console.error("[SERVER] - EAZYPAY_MERCHANT_ID:", eazypayMerchantId ? "SET" : "MISSING");
-      console.error("[SERVER] - EAZYPAY_PASSWORD:", eazypayPassword ? "SET" : "MISSING");
+      console.error(
+        "[SERVER] - EAZYPAY_MERCHANT_ID:",
+        eazypayMerchantId ? "SET" : "MISSING"
+      );
+      console.error(
+        "[SERVER] - EAZYPAY_PASSWORD:",
+        eazypayPassword ? "SET" : "MISSING"
+      );
       return res.status(500).json({
         success: false,
-        message: "Eazypay credentials not configured. Please set EAZYPAY_MERCHANT_ID and EAZYPAY_PASSWORD environment variables.",
+        message:
+          "Eazypay credentials not configured. Please set EAZYPAY_MERCHANT_ID and EAZYPAY_PASSWORD environment variables.",
       });
     }
 
@@ -112,7 +124,10 @@ app.get("/api/create-session", async (req, res) => {
 
     console.log("[SERVER] Eazypay response status:", response.status);
     const data = await response.json();
-    console.log("[SERVER] Eazypay response data:", JSON.stringify(data, null, 2));
+    console.log(
+      "[SERVER] Eazypay response data:",
+      JSON.stringify(data, null, 2)
+    );
 
     if (!response.ok) {
       console.error("[SERVER] ERROR: Eazypay API returned error");
