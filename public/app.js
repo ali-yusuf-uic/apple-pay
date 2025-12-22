@@ -91,10 +91,10 @@ function setupApplePayButton() {
   }
 
   console.log("[PAYMENT] Setting up Apple Pay button click handler");
-  
+
   button.addEventListener("click", async () => {
     console.log("[PAYMENT] Apple Pay button clicked");
-    
+
     if (!checkApplePayAvailability()) {
       console.warn("[PAYMENT] WARNING: Apple Pay is not available");
       return;
@@ -113,7 +113,12 @@ function setupApplePayButton() {
 // Create Eazypay session
 async function createEazypaySession(amount) {
   const url = "/api/create-session?amount=" + amount + "&currency=" + CURRENCY;
-  console.log("[PAYMENT] Creating Eazypay session with amount:", amount, "currency:", CURRENCY);
+  console.log(
+    "[PAYMENT] Creating Eazypay session with amount:",
+    amount,
+    "currency:",
+    CURRENCY
+  );
 
   try {
     showLoading("Creating secure session...");
@@ -125,7 +130,9 @@ async function createEazypaySession(amount) {
 
     if (!data.success || !data.sessionId) {
       console.error("[PAYMENT] ERROR: Failed to create Eazypay session", data);
-      throw new Error("Failed to create Eazypay session: " + (data.message || "No session ID"));
+      throw new Error(
+        "Failed to create Eazypay session: " + (data.message || "No session ID")
+      );
     }
 
     console.log("[PAYMENT] ✓ Session created successfully:", data.sessionId);
@@ -139,7 +146,10 @@ async function createEazypaySession(amount) {
 
 // Initialize Eazypay checkout
 function initializeEazypayCheckout(sessionId) {
-  console.log("[PAYMENT] Initializing Eazypay checkout with sessionId:", sessionId);
+  console.log(
+    "[PAYMENT] Initializing Eazypay checkout with sessionId:",
+    sessionId
+  );
   return new Promise((resolve, reject) => {
     // Remove old script if exists
     const oldScript = document.getElementById("eazypay-checkout-script");
@@ -152,7 +162,10 @@ function initializeEazypayCheckout(sessionId) {
     const script = document.createElement("script");
     script.id = "eazypay-checkout-script";
     script.src = EAZYPAY_CHECKOUT_URL;
-    console.log("[PAYMENT] Loading Eazypay checkout from:", EAZYPAY_CHECKOUT_URL);
+    console.log(
+      "[PAYMENT] Loading Eazypay checkout from:",
+      EAZYPAY_CHECKOUT_URL
+    );
     script.setAttribute("data-error", "window.eazypayErrorCallback");
     script.setAttribute("data-cancel", "window.eazypayCancel Callback");
     script.setAttribute("data-complete", "window.eazypayCompleteCallback");
@@ -163,7 +176,10 @@ function initializeEazypayCheckout(sessionId) {
         showLoading("Loading payment form...");
 
         // Configure Checkout
-        console.log("[PAYMENT] Configuring Checkout with session ID:", sessionId);
+        console.log(
+          "[PAYMENT] Configuring Checkout with session ID:",
+          sessionId
+        );
         Checkout.configure({
           session: { id: sessionId },
         });
@@ -171,9 +187,14 @@ function initializeEazypayCheckout(sessionId) {
 
         // Store callback handlers globally
         window.eazypayErrorCallback = () => {
-          console.error("[PAYMENT] ERROR CALLBACK: Payment error occurred in Eazypay widget");
+          console.error(
+            "[PAYMENT] ERROR CALLBACK: Payment error occurred in Eazypay widget"
+          );
           hideLoading();
-          showStatus("Payment error occurred. Check browser console for details.", "error");
+          showStatus(
+            "Payment error occurred. Check browser console for details.",
+            "error"
+          );
           reject(new Error("Payment error from Eazypay"));
         };
 
@@ -185,7 +206,9 @@ function initializeEazypayCheckout(sessionId) {
         };
 
         window.eazypayCompleteCallback = async () => {
-          console.log("[PAYMENT] COMPLETE CALLBACK: Payment completed in Eazypay widget");
+          console.log(
+            "[PAYMENT] COMPLETE CALLBACK: Payment completed in Eazypay widget"
+          );
           showLoading("Finalizing payment...");
           resolve(true);
         };
@@ -204,7 +227,10 @@ function initializeEazypayCheckout(sessionId) {
     };
 
     script.onerror = () => {
-      console.error("[PAYMENT] ERROR: Failed to load Eazypay checkout script from:", EAZYPAY_CHECKOUT_URL);
+      console.error(
+        "[PAYMENT] ERROR: Failed to load Eazypay checkout script from:",
+        EAZYPAY_CHECKOUT_URL
+      );
       hideLoading();
       reject(new Error("Failed to load Eazypay checkout"));
     };
@@ -217,8 +243,12 @@ function initializeEazypayCheckout(sessionId) {
 // Initiate Apple Payment - Redirect to Eazypay
 async function initiateApplePayment() {
   console.log("[PAYMENT] ========== PAYMENT FLOW STARTED ==========");
-  console.log("[PAYMENT] Initiating Apple Payment with amount:", TOTAL_AMOUNT, CURRENCY);
-  
+  console.log(
+    "[PAYMENT] Initiating Apple Payment with amount:",
+    TOTAL_AMOUNT,
+    CURRENCY
+  );
+
   try {
     showLoading("Preparing payment...");
 
@@ -226,28 +256,31 @@ async function initiateApplePayment() {
     console.log("[PAYMENT] Step 1: Creating Eazypay session");
     const sessionData = await createEazypaySession(TOTAL_AMOUNT);
     console.log("[PAYMENT] ✓ Step 1 complete: Session data:", sessionData);
-    
+
     hideLoading();
-    
+
     // Open Eazypay checkout
     console.log("[PAYMENT] Step 2: Initializing Eazypay checkout widget");
     await initializeEazypayCheckout(sessionData.sessionId);
     console.log("[PAYMENT] ✓ Step 2 complete: Eazypay checkout initialized");
-    
+
     // When checkout completes, finalize the payment
     console.log("[PAYMENT] Step 3: Saving payment to backend");
     showLoading("Finalizing payment...");
-    
-    const paymentData = { 
+
+    const paymentData = {
       DBdata: {
         sessionId: sessionData.sessionId,
         amount: TOTAL_AMOUNT,
         currency: CURRENCY,
-        source: "apple_pay"
-      }
+        source: "apple_pay",
+      },
     };
-    console.log("[PAYMENT] Sending payment data to /api/save-payment:", paymentData);
-    
+    console.log(
+      "[PAYMENT] Sending payment data to /api/save-payment:",
+      paymentData
+    );
+
     const saveResponse = await fetch("/api/save-payment", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -262,14 +295,25 @@ async function initiateApplePayment() {
 
     if (saveResult.success) {
       console.log("[PAYMENT] ✓ Step 3 complete: Payment successful!");
-      console.log("[PAYMENT] ========== PAYMENT FLOW COMPLETED SUCCESSFULLY ==========");
-      showStatus("✓ Payment successful! Thank you for your purchase.", "success");
+      console.log(
+        "[PAYMENT] ========== PAYMENT FLOW COMPLETED SUCCESSFULLY =========="
+      );
+      showStatus(
+        "✓ Payment successful! Thank you for your purchase.",
+        "success"
+      );
       setTimeout(() => {
         window.location.reload();
       }, 3000);
     } else {
-      console.error("[PAYMENT] ✗ Step 3 failed: Backend returned error", saveResult);
-      showStatus("Payment failed: " + (saveResult.message || "Unknown error"), "error");
+      console.error(
+        "[PAYMENT] ✗ Step 3 failed: Backend returned error",
+        saveResult
+      );
+      showStatus(
+        "Payment failed: " + (saveResult.message || "Unknown error"),
+        "error"
+      );
     }
   } catch (error) {
     console.error("[PAYMENT] ========== PAYMENT FLOW ERROR ==========");
@@ -313,16 +357,18 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("[PAYMENT] Merchant ID:", MERCHANT_ID);
   console.log("[PAYMENT] Payment amount:", TOTAL_AMOUNT, CURRENCY);
   console.log("[PAYMENT] Eazypay checkout URL:", EAZYPAY_CHECKOUT_URL);
-  
+
   // Check Apple Pay availability and set up button
   if (!checkApplePayAvailability()) {
-    console.warn("[PAYMENT] WARNING: Apple Pay not available, showing fallback");
+    console.warn(
+      "[PAYMENT] WARNING: Apple Pay not available, showing fallback"
+    );
   } else {
     console.log("[PAYMENT] ✓ Apple Pay is available on this device");
   }
 
   setupApplePayButton();
   setupFallbackButton();
-  
+
   console.log("[PAYMENT] ========== READY FOR PAYMENT ==========");
 });
