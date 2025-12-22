@@ -167,7 +167,7 @@ function initializeEazypayCheckout(sessionId) {
       EAZYPAY_CHECKOUT_URL
     );
     script.setAttribute("data-error", "window.eazypayErrorCallback");
-    script.setAttribute("data-cancel", "window.eazypayCancel Callback");
+    script.setAttribute("data-cancel", "window.eazypayCancelCallback");
     script.setAttribute("data-complete", "window.eazypayCompleteCallback");
 
     script.onload = () => {
@@ -175,17 +175,7 @@ function initializeEazypayCheckout(sessionId) {
         console.log("[PAYMENT] Eazypay script loaded successfully");
         showLoading("Loading payment form...");
 
-        // Configure Checkout
-        console.log(
-          "[PAYMENT] Configuring Checkout with session ID:",
-          sessionId
-        );
-        Checkout.configure({
-          session: { id: sessionId },
-        });
-        console.log("[PAYMENT] ✓ Checkout configured");
-
-        // Store callback handlers globally
+        // Store callback handlers globally BEFORE configuring
         window.eazypayErrorCallback = () => {
           console.error(
             "[PAYMENT] ERROR CALLBACK: Payment error occurred in Eazypay widget"
@@ -214,6 +204,17 @@ function initializeEazypayCheckout(sessionId) {
         };
 
         console.log("[PAYMENT] ✓ Callbacks registered");
+
+        // Configure Checkout
+        console.log(
+          "[PAYMENT] Configuring Checkout with session ID:",
+          sessionId
+        );
+        Checkout.configure({
+          session: { id: sessionId },
+        });
+        console.log("[PAYMENT] ✓ Checkout configured");
+
         hideLoading();
         showLoading("Opening payment form...");
         console.log("[PAYMENT] Showing Eazypay payment page");
