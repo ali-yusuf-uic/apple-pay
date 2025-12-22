@@ -142,182 +142,158 @@ async function createEazypaySession(amount) {
     hideLoading();
     throw error;
   }
-}
-
-// Initialize Eazypay checkout
-function initializeEazypayCheckout(sessionId) {
-  console.log(
-    "[PAYMENT] Initializing Eazypay checkout with sessionId:",
-    sessionId
-  );
-  return new Promise((resolve, reject) => {
-    // Remove old script if exists
-    const oldScript = document.getElementById("eazypay-checkout-script");
-    if (oldScript) {
-      console.log("[PAYMENT] Removing existing Eazypay script");
-      oldScript.remove();
-    }
-
-    // Load Eazypay checkout script
-    const script = document.createElement("script");
-    script.id = "eazypay-checkout-script";
-    script.src = EAZYPAY_CHECKOUT_URL;
-    console.log(
-      "[PAYMENT] Loading Eazypay checkout from:",
-      EAZYPAY_CHECKOUT_URL
-    );
-    script.setAttribute("data-error", "window.eazypayErrorCallback");
-    script.setAttribute("data-cancel", "window.eazypayCancelCallback");
-    script.setAttribute("data-complete", "window.eazypayCompleteCallback");
-
-    script.onload = () => {
-      try {
-        console.log("[PAYMENT] Eazypay script loaded successfully");
-        showLoading("Loading payment form...");
-
-        // Store callback handlers globally BEFORE configuring
-        window.eazypayErrorCallback = () => {
-          console.error(
-            "[PAYMENT] ERROR CALLBACK: Payment error occurred in Eazypay widget"
-          );
-          hideLoading();
-          showStatus(
-            "Payment error occurred. Check browser console for details.",
-            "error"
-          );
-          reject(new Error("Payment error from Eazypay"));
-        };
-
-        window.eazypayCancelCallback = () => {
-          console.log("[PAYMENT] CANCEL CALLBACK: User cancelled payment");
-          hideLoading();
-          showStatus("Payment cancelled.", "error");
-          reject(new Error("Payment cancelled by user"));
-        };
-
-        window.eazypayCompleteCallback = async () => {
-          console.log(
-            "[PAYMENT] COMPLETE CALLBACK: Payment completed in Eazypay widget"
-          );
-          showLoading("Finalizing payment...");
-          resolve(true);
-        };
-
-        console.log("[PAYMENT] ✓ Callbacks registered");
-
-        // Configure Checkout
-        console.log(
-          "[PAYMENT] Configuring Checkout with session ID:",
-          sessionId
-        );
-        Checkout.configure({
-          session: { id: sessionId },
-        });
-        console.log("[PAYMENT] ✓ Checkout configured");
-
-        hideLoading();
-        showLoading("Opening payment form...");
-        console.log("[PAYMENT] Showing Eazypay payment page");
-        Checkout.showPaymentPage();
-        console.log("[PAYMENT] ✓ Payment page shown");
-      } catch (error) {
-        console.error("[PAYMENT] ERROR in script.onload:", error);
-        hideLoading();
-        reject(error);
-      }
-    };
-
-    script.onerror = () => {
-      console.error(
-        "[PAYMENT] ERROR: Failed to load Eazypay checkout script from:",
-        EAZYPAY_CHECKOUT_URL
-      );
-      hideLoading();
-      reject(new Error("Failed to load Eazypay checkout"));
-    };
-
-    console.log("[PAYMENT] Appending Eazypay script to document");
-    document.body.appendChild(script);
-  });
-}
-
-// Initiate Apple Payment - Redirect to Eazypay
+// Initiate Apple Payment - Native Apple Pay Sheet
 async function initiateApplePayment() {
-  console.log("[PAYMENT] ========== PAYMENT FLOW STARTED ==========");
+  console.log("[PAYMENT] ========== APPLE PAY FLOW STARTED ==========");
   console.log(
-    "[PAYMENT] Initiating Apple Payment with amount:",
+    "[PAYMENT] Initiating Native Apple Payment with amount:",
     TOTAL_AMOUNT,
     CURRENCY
   );
-
+  
   try {
-    showLoading("Preparing payment...");
-
-    // Create Eazypay session
-    console.log("[PAYMENT] Step 1: Creating Eazypay session");
-    const sessionData = await createEazypaySession(TOTAL_AMOUNT);
-    console.log("[PAYMENT] ✓ Step 1 complete: Session data:", sessionData);
-
-    hideLoading();
-
-    // Open Eazypay checkout
-    console.log("[PAYMENT] Step 2: Initializing Eazypay checkout widget");
-    await initializeEazypayCheckout(sessionData.sessionId);
-    console.log("[PAYMENT] ✓ Step 2 complete: Eazypay checkout initialized");
-
-    // When checkout completes, finalize the payment
-    console.log("[PAYMENT] Step 3: Saving payment to backend");
-    showLoading("Finalizing payment...");
-
-    const paymentData = {
-      DBdata: {
-        sessionId: sessionData.sessionId,
-        amount: TOTAL_AMOUNT,
-        currency: CURRENCY,
-        source: "apple_pay",
-      },
-    };
-    console.log(
-      "[PAYMENT] Sending payment data to /api/save-payment:",
-      paymentData
-    );
-
-    const saveResponse = await fetch("/api/save-payment", {
+    // Step 1: Request Apple Pay session from server
+    console.log("[PAYMENT] Step 1: Requesting Apple Pay session from server");
+    const sessionResponse = await fetch("/api/apple-pay-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify({
+        validationURL: "https://apple-pay-gateway.apple.com/paymentservices/paymentSession",
+        displayName: "UIC Payment"
+      }),
     });
 
-    console.log("[PAYMENT] Save response status:", saveResponse.status);
-    const saveResult = await saveResponse.json();
-    console.log("[PAYMENT] Save response data:", saveResult);
-
-    hideLoading();
-
-    if (saveResult.success) {
-      console.log("[PAYMENT] ✓ Step 3 complete: Payment successful!");
-      console.log(
-        "[PAYMENT] ========== PAYMENT FLOW COMPLETED SUCCESSFULLY =========="
-      );
-      showStatus(
-        "✓ Payment successful! Thank you for your purchase.",
-        "success"
-      );
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-    } else {
-      console.error(
-        "[PAYMENT] ✗ Step 3 failed: Backend returned error",
-        saveResult
-      );
-      showStatus(
-        "Payment failed: " + (saveResult.message || "Unknown error"),
-        "error"
-      );
+    const sessionData = await sessionResponse.json();
+    if (!sessionData.success) {
+      throw new Error("Failed to create Apple Pay session: " + sessionData.message);
     }
+    console.log("[PAYMENT] ✓ Step 1 complete: Apple Pay session created");
+
+    // Step 2: Create Apple Pay payment request
+    console.log("[PAYMENT] Step 2: Creating Apple Pay payment request");
+    const request = {
+      countryCode: "BH",
+      currencyCode: CURRENCY,
+      supportedNetworks: ["visa", "masterCard", "amex"],
+      merchantCapabilities: ["supports3DS"],
+      total: {
+        label: "UIC Payment",
+        amount: TOTAL_AMOUNT,
+        type: "final"
+      }
+    };
+    console.log("[PAYMENT] Payment request:", request);
+
+    // Step 3: Create and present Apple Pay session
+    console.log("[PAYMENT] Step 3: Creating ApplePaySession");
+    const session = new ApplePaySession(3, request);
+    console.log("[PAYMENT] ✓ ApplePaySession created");
+
+    // Handle validation event
+    session.onvalidatemerchant = async (event) => {
+      console.log("[PAYMENT] onvalidatemerchant event triggered");
+      try {
+        const response = await fetch("/api/apple-pay-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            validationURL: event.validationURL,
+            displayName: "UIC Payment"
+          }),
+        });
+
+        const data = await response.json();
+        if (data.session) {
+          console.log("[PAYMENT] ✓ Merchant validation successful");
+          session.completeMerchantValidation(data.session);
+        } else {
+          throw new Error("Invalid merchant session");
+        }
+      } catch (error) {
+        console.error("[PAYMENT] Merchant validation error:", error);
+        session.abort();
+      }
+    };
+
+    // Handle payment method selection
+    session.onpaymentmethodselected = (event) => {
+      console.log("[PAYMENT] Payment method selected:", event.paymentMethod);
+      session.completePaymentMethodSelection({
+        newTotal: request.total,
+        newLineItems: []
+      });
+    };
+
+    // Handle shipping method selection
+    session.onshippingmethodselected = (event) => {
+      console.log("[PAYMENT] Shipping method selected");
+      session.completeShippingMethodSelection({
+        newTotal: request.total,
+        newLineItems: []
+      });
+    };
+
+    // Handle payment authorization
+    session.onpaymentauthorized = async (event) => {
+      console.log("[PAYMENT] Payment authorized, processing...");
+      showLoading("Processing Apple Pay payment...");
+      
+      try {
+        // Get the payment token from Apple
+        const paymentData = event.payment;
+        console.log("[PAYMENT] Payment data from Apple Pay:", paymentData);
+
+        // Send to Eazypay for processing
+        console.log("[PAYMENT] Sending payment token to Eazypay...");
+        const saveResponse = await fetch("/api/process-apple-pay", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: TOTAL_AMOUNT,
+            currency: CURRENCY,
+            paymentData: JSON.stringify(paymentData),
+            source: "apple_pay_native"
+          }),
+        });
+
+        const saveResult = await saveResponse.json();
+        console.log("[PAYMENT] Eazypay response:", saveResult);
+
+        hideLoading();
+
+        if (saveResult.success) {
+          console.log("[PAYMENT] ✓ Payment successful!");
+          session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          console.log("[PAYMENT] ========== APPLE PAY FLOW COMPLETED SUCCESSFULLY ==========");
+          showStatus("✓ Payment successful! Thank you for your purchase.", "success");
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        } else {
+          console.error("[PAYMENT] Payment processing failed:", saveResult);
+          session.completePayment(ApplePaySession.STATUS_FAILURE);
+          showStatus("Payment processing failed: " + (saveResult.message || "Unknown error"), "error");
+        }
+      } catch (error) {
+        console.error("[PAYMENT] Payment authorization error:", error);
+        hideLoading();
+        session.completePayment(ApplePaySession.STATUS_FAILURE);
+        showStatus("Payment error: " + error.message, "error");
+      }
+    };
+
+    // Handle cancel
+    session.oncancel = (event) => {
+      console.log("[PAYMENT] Apple Pay cancelled by user");
+      showStatus("Payment cancelled.", "error");
+    };
+
+    console.log("[PAYMENT] Beginning Apple Pay session...");
+    session.begin();
+    console.log("[PAYMENT] ✓ Apple Pay sheet presented to user");
+
   } catch (error) {
-    console.error("[PAYMENT] ========== PAYMENT FLOW ERROR ==========");
+    console.error("[PAYMENT] ========== APPLE PAY FLOW ERROR ==========");
     console.error("[PAYMENT] Error message:", error.message);
     console.error("[PAYMENT] Full error:", error);
     console.error("[PAYMENT] Error stack:", error.stack);

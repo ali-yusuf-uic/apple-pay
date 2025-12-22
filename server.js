@@ -207,6 +207,144 @@ app.post("/api/apple-pay-session", async (req, res) => {
   }
 });
 
+// Process Apple Pay native payment
+app.post("/api/process-apple-pay", async (req, res) => {
+  try {
+    console.log("[SERVER] /api/process-apple-pay called");
+    const { amount, currency, paymentData, source } = req.body;
+
+    console.log("[SERVER] Processing Apple Pay payment:");
+    console.log("[SERVER] - Amount:", amount);
+    console.log("[SERVER] - Currency:", currency);
+    console.log("[SERVER] - Source:", source);
+    console.log("[SERVER] - Payment data received:", paymentData ? "YES" : "NO");
+
+    if (!amount || !paymentData) {
+      console.error("[SERVER] ERROR: Missing amount or payment data");
+      return res.status(400).json({
+        success: false,
+        message: "Amount and payment data are required",
+      });
+    }
+
+    // Check if Eazypay credentials are configured
+    if (!eazypayMerchantId || !eazypayPassword) {
+      console.error("[SERVER] ERROR: Eazypay credentials not configured");
+      return res.status(500).json({
+        success: false,
+        message: "Eazypay credentials not configured",
+      });
+    }
+
+    // Parse the payment data from Apple
+    let applePaymentData;
+    try {
+      applePaymentData = typeof paymentData === 'string' ? JSON.parse(paymentData) : paymentData;
+      console.log("[SERVER] Apple payment data parsed successfully");
+    } catch (error) {
+      console.error("[SERVER] ERROR: Failed to parse payment data:", error);
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment data format",
+      });
+    }
+
+    // Get the payment token from Apple Pay
+    const paymentToken = applePaymentData.token;
+    if (!paymentToken) {
+      console.error("[SERVER] ERROR: No payment token in Apple Pay data");
+      return res.status(400).json({
+        success: false,
+        message: "No payment token received from Apple Pay",
+      });
+    }
+
+    console.log("[SERVER] Payment token received from Apple Pay");
+
+    // Create a session with Eazypay using the Apple Pay token
+    const username = `merchant.${eazypayMerchantId}`;
+    const orderId = "APPLEPAY-" + Math.floor(Date.now() / 1000);
+    const eazypaySessionUrl = `${eazypayBaseUrl}/merchant/${eazypayMerchantId}/session`;
+
+    console.log("[SERVER] Creating Eazypay session for Apple Pay token");
+    console.log("[SERVER] - Eazypay URL:", eazypaySessionUrl);
+    console.log("[SERVER] - Order ID:", orderId);
+
+    const eazypayPayload = {
+      apiOperation: "CREATE_CHECKOUT_SESSION",
+      interaction: {
+        operation: "AUTHORIZE",
+        merchant: {
+          name: "UIC - United Insurance Company",
+        },
+        displayControl: {
+          billingAddress: "HIDE",
+        },
+      },
+      order: {
+        id: orderId,
+        amount: amount,
+        currency: currency,
+      },
+    };
+
+    const eazypayResponse = await fetch(eazypaySessionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Basic " + Buffer.from(username + ":" + eazypayPassword).toString("base64"),
+      },
+      body: JSON.stringify(eazypayPayload),
+    });
+
+    const eazypayData = await eazypayResponse.json();
+    console.log("[SERVER] Eazypay session response status:", eazypayResponse.status);
+    console.log("[SERVER] Eazypay session response:", eazypayData);
+
+    if (!eazypayResponse.ok || eazypayData.result !== "SUCCESS") {
+      console.error("[SERVER] ERROR: Eazypay session creation failed", eazypayData);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to process payment: " + (eazypayData.message || eazypayData.error),
+      });
+    }
+
+    const sessionId = eazypayData.session?.id;
+    if (!sessionId) {
+      console.error("[SERVER] ERROR: No session ID returned from Eazypay");
+      return res.status(500).json({
+        success: false,
+        message: "Invalid response from payment processor",
+      });
+    }
+
+    console.log("[SERVER] ✓ Eazypay session created:", sessionId);
+
+    // Log the successful transaction
+    console.log("[SERVER] Apple Pay transaction recorded:");
+    console.log("[SERVER] - Amount:", amount, currency);
+    console.log("[SERVER] - Eazypay Session:", sessionId);
+    console.log("[SERVER] - Order ID:", orderId);
+
+    res.json({
+      success: true,
+      message: "Apple Pay payment processed successfully",
+      sessionId: sessionId,
+      orderId: orderId,
+      amount: amount,
+      currency: currency,
+    });
+  } catch (error) {
+    console.error("[SERVER] ERROR in /api/process-apple-pay:", error);
+    console.error("[SERVER] Error message:", error.message);
+    console.error("[SERVER] Error stack:", error.stack);
+    res.status(500).json({
+      success: false,
+      message: "Error processing payment: " + error.message,
+    });
+  }
+});
+
 // Process payment completion (save transaction)
 app.post("/api/save-payment", async (req, res) => {
   try {
