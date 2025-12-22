@@ -5,11 +5,13 @@ This guide walks you through testing Apple Pay locally using ngrok.
 ## 🚀 Step 1: Install ngrok
 
 ### On Windows:
+
 1. Download from: https://ngrok.com/download
 2. Extract the executable to a folder (e.g., `C:\ngrok`)
 3. Add it to your PATH or use the full path to run it
 
 Verify installation:
+
 ```bash
 ngrok version
 ```
@@ -25,6 +27,7 @@ npm start
 ```
 
 You should see:
+
 ```
 Server running on http://localhost:3000
 ```
@@ -42,6 +45,7 @@ ngrok http 3000
 ```
 
 You'll see output like:
+
 ```
 ngrok by @inconshrevat                       (Ctrl+C to quit)
 
@@ -84,11 +88,13 @@ Apple will show you a **Verification File** to download.
 ## 💾 Step 5: Create the Verification Endpoint
 
 1. In your project root, create a folder:
+
    ```bash
    mkdir .well-known
    ```
 
 2. Create the verification file in that folder:
+
    ```
    .well-known/apple-developer-merchantid-domain-association
    ```
@@ -97,6 +103,7 @@ Apple will show you a **Verification File** to download.
 4. Paste it into your newly created file
 
 Your file structure should look like:
+
 ```
 apple-pay/
 ├── .well-known/
@@ -115,27 +122,28 @@ Edit your `server.js` file and add this line **before other routes**:
 
 ```javascript
 // Serve the Apple Pay domain verification file
-app.use('/.well-known', express.static('.well-known'));
+app.use("/.well-known", express.static(".well-known"));
 ```
 
 Your server.js should look like:
+
 ```javascript
-const express = require('express');
-const path = require('path');
-require('dotenv').config();
+const express = require("express");
+const path = require("path");
+require("dotenv").config();
 
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // 👇 ADD THIS LINE
-app.use('/.well-known', express.static('.well-known'));
+app.use("/.well-known", express.static(".well-known"));
 
 // Routes
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // ... rest of your code
@@ -146,6 +154,7 @@ app.get('/', (req, res) => {
 ## ✅ Step 7: Verify the Domain File is Accessible
 
 1. **Stop and restart your server:**
+
    ```bash
    # Press Ctrl+C in the npm start terminal
    # Then run:
@@ -154,7 +163,7 @@ app.get('/', (req, res) => {
 
 2. **Test the URL in your browser:**
    Visit: `https://xxxx-xx-xxx-xxx-xx.ngrok.io/.well-known/apple-developer-merchantid-domain-association`
-   
+
    You should see the verification file content (it's usually a long string).
 
 3. **If it works:** Go back to Apple Developer and click **Verify**
@@ -166,7 +175,7 @@ app.get('/', (req, res) => {
 Edit `public/app.js` and make sure your MERCHANT_ID matches:
 
 ```javascript
-const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Match what you registered with Apple
+const MERCHANT_ID = "merchant.com.yourcompany.applepay"; // Match what you registered with Apple
 ```
 
 ---
@@ -174,6 +183,7 @@ const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Match what you regis
 ## 📱 Step 9: Test on a Real Device
 
 ### Requirements:
+
 - iPhone, iPad, or Mac with Safari
 - Connected to the same network (or internet)
 - Running iOS 11+ or macOS 10.12+
@@ -182,6 +192,7 @@ const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Match what you regis
 
 1. **On your iPhone/iPad/Mac**, open Safari
 2. Visit your ngrok URL:
+
    ```
    https://xxxx-xx-xxx-xxx-xx.ngrok.io
    ```
@@ -191,6 +202,7 @@ const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Match what you regis
 5. You should see the Apple Pay payment sheet (requires Face ID/Touch ID or Apple Pay card)
 
 ### If Apple Pay doesn't show:
+
 - Check browser console (Safari → Develop → Console)
 - Verify domain is registered with Apple
 - Verify verification file is accessible at the `.well-known` URL
@@ -201,16 +213,19 @@ const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Match what you regis
 ## ⚡ Quick Reference Commands
 
 ### Terminal 1 (Server):
+
 ```bash
 npm start
 ```
 
 ### Terminal 2 (ngrok):
+
 ```bash
 ngrok http 3000
 ```
 
 ### Test the verification file:
+
 ```bash
 # Windows PowerShell or curl:
 curl https://xxxx-xx-xxx-xxx-xx.ngrok.io/.well-known/apple-developer-merchantid-domain-association
@@ -235,21 +250,25 @@ To avoid this, you can use **ngrok custom domains** (paid feature) to always get
 ## 🐛 Troubleshooting
 
 ### "Apple Pay is not available"
+
 - Make sure you're on Safari on iPhone/iPad or Mac
 - Verify your ngrok URL is accessible from the device
 - Check that domain is verified with Apple
 
 ### "Cannot access verification file"
+
 - Run: `curl https://your-ngrok-url/.well-known/apple-developer-merchantid-domain-association`
 - Make sure the `.well-known` folder exists
 - Restart your server with `npm start`
 
 ### "Domain verification failed"
+
 - The file content must be EXACTLY what Apple provided
 - No extra spaces or newlines
 - File must be served at the exact path
 
 ### ngrok tunnel is slow/unstable
+
 - ngrok free tier has rate limiting
 - Consider upgrading or testing with a direct IP
 - Use a wired connection for best results
@@ -274,6 +293,7 @@ To avoid this, you can use **ngrok custom domains** (paid feature) to always get
 ## Next Steps
 
 Once local testing works:
+
 1. Deploy to AWS SAM with a real domain
 2. Register that domain with Apple
 3. Upload verification file to production

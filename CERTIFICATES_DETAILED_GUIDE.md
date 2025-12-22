@@ -34,16 +34,21 @@ Do them in this order:
 ### What to enter:
 
 **For local testing with ngrok:**
+
 ```
 1a2b3c4d5e6f.ngrok.io
 ```
+
 (without `https://` - just the domain)
 
 **For AWS SAM or real domain:**
+
 ```
 yourdomain.com
 ```
+
 or
+
 ```
 pay.yourdomain.com
 ```
@@ -56,6 +61,7 @@ pay.yourdomain.com
 4. This is the verification file you'll use later
 
 ### Important:
+
 - **Save/remember this domain** - you'll register it with Apple Pay later
 - Each time you restart ngrok, you get a new URL, so you'll need a new domain entry
 
@@ -71,6 +77,7 @@ pay.yourdomain.com
 ### You'll see a form:
 
 **Select your Merchant ID:**
+
 - Dropdown will show: `merchant.com.uic.sam-uic-offers`
 - It's already selected ✓
 
@@ -87,6 +94,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 ```
 
 **This creates:**
+
 - `paymentprocessing.csr` - Upload this to Apple ✓
 - `paymentprocessing.key` - Keep this safe (don't upload)
 
@@ -95,6 +103,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 Error: `'openssl' is not recognized`
 
 **Solution:**
+
 1. Download: https://slproweb.com/products/Win32OpenSSL.html (choose "Light" version)
 2. Install it
 3. Restart Command Prompt
@@ -109,6 +118,7 @@ Error: `'openssl' is not recognized`
 5. Save it to: `C:\Users\ali.yusuf\Documents\apple-pay\certs\paymentprocessing.cer`
 
 ### You now have:
+
 - ✓ `paymentprocessing.csr` (uploaded)
 - ✓ `paymentprocessing.key` (keep safe)
 - ✓ `paymentprocessing.cer` (certificate)
@@ -131,6 +141,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 ```
 
 **This creates:**
+
 - `merchantidentity.csr` - Upload this
 - `merchantidentity.key` - Keep safe
 
@@ -142,6 +153,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 4. Save to: `C:\Users\ali.yusuf\Documents\apple-pay\certs\merchantidentity.cer`
 
 ### You now have:
+
 - ✓ `merchantidentity.csr` (uploaded)
 - ✓ `merchantidentity.key` (keep safe)
 - ✓ `merchantidentity.cer` (certificate)
@@ -170,12 +182,14 @@ apple-pay/
 ## ⚙️ What Each File Does
 
 ### `.csr` Files (Certificate Signing Requests)
+
 - Tell Apple: "Please sign this request"
 - Upload to Apple
 - After upload, you can delete them from your local machine
 - They're not needed after Apple signs them
 
 ### `.key` Files (Private Keys)
+
 - **NEVER upload to Apple**
 - **NEVER commit to GitHub**
 - **NEVER share with anyone**
@@ -184,6 +198,7 @@ apple-pay/
 - You'll use them in production to sign requests
 
 ### `.cer` Files (Certificates)
+
 - Downloaded from Apple
 - Safe to keep in your project
 - Used for encrypting/validating payments
@@ -194,16 +209,19 @@ apple-pay/
 ## 🔗 Quick Links for Each Step
 
 ### STEP 1: Add Domain
+
 - Apple page: https://developer.apple.com/account/resources/identifiers/list
 - Your Merchant ID: `merchant.com.uic.sam-uic-offers`
 - Click your Merchant ID → Scroll to "Merchant Domains" → Click "Add Domain"
 
 ### STEP 2: Payment Processing Certificate
+
 - Same Apple page as above
 - Section: "Apple Pay Payment Processing Certificate"
 - Click "Create Certificate"
 
 ### STEP 3: Merchant Identity Certificate
+
 - Same Apple page
 - Section: "Apple Pay Merchant Identity Certificate"
 - Click "Create Certificate"
@@ -227,24 +245,30 @@ apple-pay/
 ## ⚠️ Important Notes
 
 ### Don't have OpenSSL?
+
 Download from: https://slproweb.com/products/Win32OpenSSL.html
+
 - Choose "Light" version
 - Install it
 - Restart your terminal
 
 ### CSR Generation Fails?
+
 Make sure the directories exist first:
+
 ```cmd
 mkdir C:\Users\ali.yusuf\Documents\apple-pay\csr
 mkdir C:\Users\ali.yusuf\Documents\apple-pay\certs
 ```
 
 ### Which certificate for what?
+
 - **Payment Processing** = For encrypting user payment data
 - **Merchant Identity** = For your server to talk to Apple
 - Both are needed for Apple Pay to work
 
 ### What if I lose the files?
+
 - `.csr` files: Can be recreated anytime
 - `.key` files: Can be recreated by generating a new CSR (but old one is lost)
 - `.cer` files: Can be redownloaded from Apple Developer account

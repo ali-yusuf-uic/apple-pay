@@ -9,7 +9,9 @@ Apple requires proof that you own/control the domain where your Apple Pay button
 ## 🔍 Where to Find the Download Button
 
 ### Prerequisites:
+
 You must have completed **STEP 1** first:
+
 - Your Merchant ID is registered: `merchant.com.uic.sam-uic-offers`
 - You've added your domain (ngrok URL or real domain)
 - Domain status shows: **"Verification Required"**
@@ -27,6 +29,7 @@ You must have completed **STEP 1** first:
 5. Scroll down to the section called **Associated Domains**
 
 You should see your domain listed like this:
+
 ```
 Associated Domains
 ┌─────────────────────────────────────────────┐
@@ -47,6 +50,7 @@ Associated Domains
 2. **Click the [Download] button**
 
 3. Your browser will download a file (usually named something like):
+
    - No extension (just a name)
    - Or possibly: `apple-developer-merchantid-domain-association`
 
@@ -55,6 +59,7 @@ Associated Domains
    - Look for a file with no extension or the name above
 
 ### Example Screenshot (What to look for):
+
 ```
 Apple Developer Portal
 ═══════════════════════════════════════════════════════════
@@ -86,6 +91,7 @@ Associated Domains
 Or longer/different format - it varies. **Don't worry about what's in it, just copy it all.**
 
 ### Important Notes:
+
 - ✅ It's just plain text
 - ✅ No encoding needed
 - ✅ Just text content
@@ -105,6 +111,7 @@ Or longer/different format - it varies. **Don't worry about what's in it, just c
 3. **Copy** (Ctrl+C)
 
 4. Open your project file at:
+
    ```
    C:\Users\ali.yusuf\Documents\apple-pay\.well-known\apple-developer-merchantid-domain-association
    ```
@@ -133,6 +140,7 @@ This copies the file content to your project.
 ### Check 1: File Size
 
 The file should have **some content** (not empty):
+
 - Right-click file → Properties
 - Should show a size (bytes)
 - ⚠️ If size is 0 bytes, something went wrong
@@ -140,11 +148,13 @@ The file should have **some content** (not empty):
 ### Check 2: Content Starts with Right Format
 
 Open the file in Notepad - it should start with:
+
 - A UUID-like string, OR
 - Alphanumeric characters, OR
 - Some certificate-like format
 
 It should **NOT** be:
+
 - Empty
 - HTML content
 - "File not found" error
@@ -152,11 +162,13 @@ It should **NOT** be:
 ### Check 3: Can Your Server Access It?
 
 1. Make sure your server is running:
+
    ```bash
    npm start
    ```
 
 2. Visit in your browser:
+
    ```
    http://localhost:3000/.well-known/apple-developer-merchantid-domain-association
    ```
@@ -170,34 +182,44 @@ If you see the content → **Proceed to Step 3**
 ## 🆘 Troubleshooting STEP 2
 
 ### Problem: "Download button is disabled/greyed out"
+
 **Solution:**
+
 - Domain hasn't been properly saved in STEP 1
 - Go back to STEP 1 and click **Save** again
 - Refresh the page
 - Try downloading again
 
 ### Problem: "Downloaded file is empty"
+
 **Solution:**
+
 - Wait a few seconds - Apple is generating it
 - Refresh the Apple Developer page
 - Try downloading again
 
 ### Problem: "File contains HTML or error message"
+
 **Solution:**
+
 - The download didn't work properly
 - Clear browser cache (Ctrl+Shift+Delete)
 - Try downloading again
 - Or try a different browser
 
 ### Problem: "Can't find the downloaded file"
+
 **Solution:**
+
 - Check your Downloads folder: `C:\Users\ali.yusuf\Downloads\`
 - If it has no name, look for files modified just now
 - Enable "Show file extensions" in Windows to see names clearly:
   - Folder View → Options → View tab → uncheck "Hide extensions for known file types"
 
 ### Problem: "Browser tries to open file instead of download"
+
 **Solution:**
+
 - Right-click the [Download] button
 - Choose **"Save link as..."**
 - Save to your Downloads folder
@@ -206,7 +228,7 @@ If you see the content → **Proceed to Step 3**
 
 ## 📝 Quick Checklist for STEP 2
 
-- [ ] I can see my domain in "Associated Domains" 
+- [ ] I can see my domain in "Associated Domains"
 - [ ] Status shows "Verification Required"
 - [ ] [Download] button is visible and clickable
 - [ ] I've downloaded the file
@@ -223,6 +245,7 @@ If you see the content → **Proceed to Step 3**
 ## 🎯 What's Next
 
 Once you have the verification file in your project:
+
 1. Make sure server is running (`npm start`)
 2. Go to **STEP 3** - Test the file is accessible
 3. Go to **STEP 4** - Verify the domain with Apple

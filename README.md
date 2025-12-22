@@ -5,6 +5,7 @@ A simple HTML/CSS/JavaScript Apple Pay implementation to handle payments securel
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js (v14 or higher)
 - HTTPS domain (required for Apple Pay)
 - Apple Developer Account
@@ -13,23 +14,26 @@ A simple HTML/CSS/JavaScript Apple Pay implementation to handle payments securel
 ### Installation
 
 1. **Clone/Download the project**
+
    ```bash
    cd apple-pay
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Create `.env` file** (copy from `.env.example`)
+
    ```bash
    cp .env.example .env
    ```
 
 4. **Update `app.js`** with your Merchant ID
    ```javascript
-   const MERCHANT_ID = 'merchant.com.yourcompany.applepay';
+   const MERCHANT_ID = "merchant.com.yourcompany.applepay";
    ```
 
 ### Running the Server
@@ -62,18 +66,22 @@ apple-pay/
 ### Required Items (See APPLE_PAY_SETUP.md for details):
 
 1. **Merchant ID**
+
    - Format: `merchant.com.yourcompany.applepay`
    - Get from: Apple Developer → Identifiers → Merchant IDs
 
 2. **Domain Verification**
+
    - Upload verification file to `https://yourdomain.com/.well-known/apple-developer-merchantid-domain-association`
    - Verify in Apple Developer portal
 
 3. **Payment Processing Certificate**
+
    - Required for processing payments
    - Get from: Apple Developer → Certificates → Apple Pay Payment Processing Certificate
 
 4. **Merchant Identity Certificate**
+
    - Required for merchant validation
    - Get from: Apple Developer → Certificates → Apple Pay Merchant Identity Certificate
 
@@ -84,13 +92,17 @@ apple-pay/
 ## 🔧 Configuration
 
 ### Update Merchant ID
+
 Edit `public/app.js`:
+
 ```javascript
-const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Change this
+const MERCHANT_ID = "merchant.com.yourcompany.applepay"; // Change this
 ```
 
 ### Environment Variables
+
 Edit `.env`:
+
 ```
 APPLE_MERCHANT_ID=merchant.com.yourcompany.applepay
 APPLE_KEY_ID=YOUR_KEY_ID
@@ -101,11 +113,13 @@ PORT=3000
 ## 🧪 Testing
 
 ### Local Testing
+
 1. Start the server: `npm start`
 2. Open `http://localhost:3000` in your browser
 3. On non-Apple devices, you'll see the fallback option
 
 ### Real Apple Pay Testing
+
 1. Deploy to an HTTPS domain
 2. Verify domain with Apple
 3. Open on Safari on iPhone/iPad or Mac
@@ -114,9 +128,11 @@ PORT=3000
 ## 📚 API Endpoints
 
 ### POST `/api/apple-pay-session`
+
 Creates an Apple Pay merchant validation session.
 
 **Request:**
+
 ```json
 {
   "validationURL": "https://apple-pay-validation-url",
@@ -125,6 +141,7 @@ Creates an Apple Pay merchant validation session.
 ```
 
 **Response:**
+
 ```json
 {
   "merchantSession": {...}
@@ -132,9 +149,11 @@ Creates an Apple Pay merchant validation session.
 ```
 
 ### POST `/api/process-payment`
+
 Processes the payment token.
 
 **Request:**
+
 ```json
 {
   "token": "payment-token-data",
@@ -144,6 +163,7 @@ Processes the payment token.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -154,13 +174,16 @@ Processes the payment token.
 ## 🔐 Security Considerations
 
 1. **Never commit certificates or keys to Git**
+
    - Use `.env` files (already in `.gitignore`)
    - Use secure vaults for production
 
 2. **Always use HTTPS**
+
    - Apple Pay requires secure connections
 
 3. **Validate payments server-side**
+
    - Never trust client-side only
 
 4. **Keep dependencies updated**
@@ -172,16 +195,19 @@ Processes the payment token.
 ## 🐛 Troubleshooting
 
 ### Apple Pay button not showing
+
 - Check if running on Safari
 - Verify domain is registered with Apple
 - Check browser console for errors
 
 ### "Cannot make payments" error
+
 - Device/browser doesn't support Apple Pay
 - Domain not verified with Apple
 - Wrong Merchant ID
 
 ### Merchant validation fails
+
 - Certificate not installed
 - Domain verification incomplete
 - Check APPLE_PAY_SETUP.md for detailed steps

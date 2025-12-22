@@ -34,8 +34,9 @@ This guide walks you through everything you need to get from Apple to make Apple
 8. **Save this Merchant ID** - you'll need it in `app.js`
 
 ### Update Your Code:
+
 ```javascript
-const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Update this
+const MERCHANT_ID = "merchant.com.yourcompany.applepay"; // Update this
 ```
 
 ---
@@ -49,6 +50,7 @@ const MERCHANT_ID = 'merchant.com.yourcompany.applepay'; // Update this
 5. Click **Save**
 
 ### Domain Verification:
+
 Apple will ask you to verify domain ownership:
 
 1. You'll receive a verification file (domain-validation file)
@@ -68,10 +70,12 @@ If you don't verify the domain, Apple Pay will not work on your domain.
 4. Select your **Merchant ID** from the dropdown
 5. Click **Continue**
 6. Upload a **Certificate Signing Request (CSR)**
+
    - On macOS: Use Keychain Access
    - On Windows: Use OpenSSL
-   
+
    **OpenSSL Command (Windows/Linux/Mac):**
+
    ```bash
    openssl req -new -newkey rsa:2048 -nodes -out paymentprocessing.csr -keyout paymentprocessing.key -subj "/CN=paymentprocessing"
    ```
@@ -88,7 +92,7 @@ If you don't verify the domain, Apple Pay will not work on your domain.
 3. Select **Apple Pay Merchant Identity Certificate**
 4. Select your **Merchant ID**
 5. Upload a new **Certificate Signing Request**
-   
+
    ```bash
    openssl req -new -newkey rsa:2048 -nodes -out merchantidentity.csr -keyout merchantidentity.key -subj "/CN=merchantidentity"
    ```
@@ -117,6 +121,7 @@ For the **Key ID**, you'll create an API key:
 ## Step 7: Test on Device
 
 Apple Pay only works on:
+
 - **Safari on iPhone/iPad** (iOS 11+)
 - **Safari on Mac** (macOS 10.12+)
 - **Apple Pay enabled websites**
@@ -143,15 +148,18 @@ APPLE_PAYMENT_PROCESSING_KEY=/path/to/paymentprocessing.key
 ## Troubleshooting
 
 ### "Apple Pay is not available on this device"
+
 - You must use Safari on iPhone/iPad or Mac
 - Your domain must be verified with Apple
 
 ### "Merchant validation failed"
+
 - Your domain is not verified
 - Your Merchant ID is incorrect
 - Your certificate is expired
 
 ### "Payment processing failed"
+
 - Your payment processing certificate is invalid
 - Your backend server is not properly configured
 
@@ -160,6 +168,7 @@ APPLE_PAYMENT_PROCESSING_KEY=/path/to/paymentprocessing.key
 ## Security Notes
 
 ⚠️ **Never commit these files to GitHub:**
+
 - `.env` file with secrets
 - Certificate keys (`.p8`, `.key` files)
 - Merchant certificates

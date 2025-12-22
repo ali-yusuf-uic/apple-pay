@@ -7,7 +7,10 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
-  "keywords": ["apple-pay", "payment"],
+  "keywords": [
+    "apple-pay",
+    "payment"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

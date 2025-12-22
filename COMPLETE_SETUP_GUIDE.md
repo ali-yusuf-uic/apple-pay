@@ -9,6 +9,7 @@ Follow these steps to get Apple Pay fully working.
 ## ✅ STEP 1: Register Your Domain with Apple
 
 ### What is this?
+
 You need to tell Apple what domain your Apple Pay button will be on.
 
 ### How to do it:
@@ -30,6 +31,7 @@ You need to tell Apple what domain your Apple Pay button will be on.
 ## ✅ STEP 2: Download Verification File from Apple
 
 ### What is this?
+
 Apple gives you a verification file to prove you own this domain.
 
 ### How to do it:
@@ -40,6 +42,7 @@ Apple gives you a verification file to prove you own this domain.
 4. **Copy the entire content of this file**
 
 **Example content** (yours will be different):
+
 ```
 8E1C2C4D-7F8A-4B9C-6E5D-2A8F9B3C7E1D...
 ```
@@ -53,6 +56,7 @@ Apple gives you a verification file to prove you own this domain.
 The file path must be: `.well-known/apple-developer-merchantid-domain-association`
 
 It's already created in your project at:
+
 ```
 C:\Users\ali.yusuf\Documents\apple-pay\.well-known\apple-developer-merchantid-domain-association
 ```
@@ -64,7 +68,8 @@ C:\Users\ali.yusuf\Documents\apple-pay\.well-known\apple-developer-merchantid-do
 3. **Paste Apple's verification file content**
 4. **Save it**
 
-⚠️ **Important:** 
+⚠️ **Important:**
+
 - No extra text, spaces, or newlines
 - Paste EXACTLY what Apple gave you
 - Nothing more, nothing less
@@ -76,6 +81,7 @@ C:\Users\ali.yusuf\Documents\apple-pay\.well-known\apple-developer-merchantid-do
 ### Check locally:
 
 In your browser, visit:
+
 ```
 http://localhost:3000/.well-known/apple-developer-merchantid-domain-association
 ```
@@ -89,6 +95,7 @@ If you see the content ✓ → Move to next step
 If using ngrok (e.g., `https://xxxx-xxxx-xxxx.ngrok.io`):
 
 Visit in browser:
+
 ```
 https://xxxx-xxxx-xxxx.ngrok.io/.well-known/apple-developer-merchantid-domain-association
 ```
@@ -108,6 +115,7 @@ You should see the verification content.
 5. You should see: **"Verified"** ✓
 
 **If verification fails:**
+
 - Make sure file content is exactly what Apple provided
 - Make sure server is running
 - Make sure ngrok is running (if testing with ngrok)
@@ -118,6 +126,7 @@ You should see the verification content.
 ## ✅ STEP 6: Create Payment Processing Certificate
 
 ### What is this?
+
 This certificate encrypts payment data between user and Apple.
 
 ### How to create it:
@@ -138,6 +147,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 ```
 
 **This creates:**
+
 - `paymentprocessing.csr` → Upload to Apple
 - `paymentprocessing.key` → **Keep safe, never share**
 
@@ -151,6 +161,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 4. Save it somewhere safe: `C:\Users\ali.yusuf\Documents\apple-pay\certs\`
 
 **You now have:**
+
 - Certificate (`.cer`)
 - Private key (`.key`)
 
@@ -159,6 +170,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 ## ✅ STEP 7: Create Merchant Identity Certificate
 
 ### Why do you need this?
+
 This is for backend server-to-server communication with Apple.
 
 ### How to create it:
@@ -184,6 +196,7 @@ openssl req -new -newkey rsa:2048 -nodes -out C:\Users\ali.yusuf\Documents\apple
 3. Save both files safely
 
 **You now have:**
+
 - Merchant Identity Certificate (`.cer`)
 - Private key (`.key`)
 
@@ -234,6 +247,7 @@ Replace `YOUR_TEAM_ID`, `YOUR_KEY_ID`, and paths with your actual values.
 ## ✅ STEP 10: Test on Real Device
 
 ### Requirements:
+
 - iPhone, iPad, or Mac with Safari
 - Must support Apple Pay (most modern devices do)
 - iOS 11+ or macOS 10.12+
@@ -241,16 +255,19 @@ Replace `YOUR_TEAM_ID`, `YOUR_KEY_ID`, and paths with your actual values.
 ### Testing Steps:
 
 1. **Make sure your server is running:**
+
    ```bash
    npm start
    ```
 
 2. **Make sure ngrok is running** (if testing remote):
+
    ```bash
    C:\Users\ali.yusuf\Downloads\ngrok\ngrok.exe http 3000
    ```
 
 3. **On your iPhone/iPad/Mac Safari:**
+
    - Visit your ngrok URL or domain
    - You should see the Apple Pay checkout page
    - Click **"Pay with Apple Pay"** button
@@ -284,27 +301,35 @@ Replace `YOUR_TEAM_ID`, `YOUR_KEY_ID`, and paths with your actual values.
 ## 🆘 Common Issues & Solutions
 
 ### "Domain verification failed"
+
 **Solution:**
+
 - File content must be EXACTLY what Apple provided
 - No extra spaces or newlines
 - Server must be running
 - Wait 1-2 minutes and try again
 
 ### "Apple Pay button doesn't appear"
+
 **Solution:**
+
 - Must be on Safari on iPhone/iPad/Mac
 - Domain must be verified (Verified ✓)
 - Check browser console for errors
 - Make sure you're using HTTPS (ngrok provides this)
 
 ### "Merchant validation failed"
+
 **Solution:**
+
 - Check that domain is verified
 - Check that Merchant ID is correct
 - Check that certificate is properly loaded
 
 ### OpenSSL not found
+
 **Solution:**
+
 - Download: https://slproweb.com/products/Win32OpenSSL.html
 - Install "Light" version
 - Restart terminal and try again
@@ -314,11 +339,13 @@ Replace `YOUR_TEAM_ID`, `YOUR_KEY_ID`, and paths with your actual values.
 ## 🔐 Security Notes
 
 ⚠️ **Never commit to GitHub:**
+
 - `.env` file
 - Private keys (`.key` files)
 - Certificates (`.cer`, `.p8` files)
 
 Use `.gitignore` to exclude these:
+
 ```
 .env
 certs/
@@ -340,6 +367,7 @@ Once everything works:
 ---
 
 Questions? Check:
+
 - Apple Pay Documentation: https://developer.apple.com/apple-pay/
 - Your project's APPLE_PAY_SETUP.md
 - LOCAL_TESTING_GUIDE.md for ngrok help

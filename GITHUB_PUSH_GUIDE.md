@@ -3,17 +3,20 @@
 ## Quick Steps
 
 ### 1. Initialize Git (if not already done)
+
 ```bash
 cd C:\Users\ali.yusuf\Documents\apple-pay
 git init
 ```
 
 ### 2. Add All Files
+
 ```bash
 git add .
 ```
 
 ### 3. Create First Commit
+
 ```bash
 git commit -m "Initial Apple Pay project setup"
 ```
@@ -42,6 +45,7 @@ Replace `YOUR_USERNAME` with your actual GitHub username.
 ---
 
 ## ✅ What Gets Uploaded (Safe):
+
 - ✅ `public/` folder (HTML, CSS, JS)
 - ✅ `src/` folder
 - ✅ `server.js`
@@ -50,6 +54,7 @@ Replace `YOUR_USERNAME` with your actual GitHub username.
 - ✅ Documentation (`.md` files)
 
 ## ✅ What Gets IGNORED (Protected):
+
 - ❌ `.env` (your secrets)
 - ❌ `certs/` (your certificates)
 - ❌ `csr/` (your keys)
