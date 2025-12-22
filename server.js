@@ -11,6 +11,11 @@ app.use(express.static('public'));
 // Serve Apple Pay domain verification file
 app.use('/.well-known', express.static('.well-known'));
 
+// Explicit route for Apple Pay domain verification
+app.get('/.well-known/apple-developer-merchantid-domain-association', (req, res) => {
+  res.sendFile(path.join(__dirname, '.well-known', 'apple-developer-merchantid-domain-association'));
+});
+
 // Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
