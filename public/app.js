@@ -110,38 +110,6 @@ function setupApplePayButton() {
   });
 }
 
-// Create Eazypay session
-async function createEazypaySession(amount) {
-  const url = "/api/create-session?amount=" + amount + "&currency=" + CURRENCY;
-  console.log(
-    "[PAYMENT] Creating Eazypay session with amount:",
-    amount,
-    "currency:",
-    CURRENCY
-  );
-
-  try {
-    showLoading("Creating secure session...");
-    console.log("[PAYMENT] Fetching URL:", url);
-    const res = await fetch(url);
-    console.log("[PAYMENT] Session creation response status:", res.status);
-    const data = await res.json();
-    console.log("[PAYMENT] Session creation response data:", data);
-
-    if (!data.success || !data.sessionId) {
-      console.error("[PAYMENT] ERROR: Failed to create Eazypay session", data);
-      throw new Error(
-        "Failed to create Eazypay session: " + (data.message || "No session ID")
-      );
-    }
-
-    console.log("[PAYMENT] ✓ Session created successfully:", data.sessionId);
-    return data;
-  } catch (error) {
-    console.error("[PAYMENT] ERROR in createEazypaySession:", error);
-    hideLoading();
-    throw error;
-  }
 // Initiate Apple Payment - Native Apple Pay Sheet
 async function initiateApplePayment() {
   console.log("[PAYMENT] ========== APPLE PAY FLOW STARTED ==========");
