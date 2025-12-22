@@ -104,8 +104,7 @@ function setupApplePayButton() {
 
 // Create Eazypay session
 async function createEazypaySession(amount) {
-  const url =
-    "/api/create-session?amount=" + amount + "&currency=" + CURRENCY;
+  const url = "/api/create-session?amount=" + amount + "&currency=" + CURRENCY;
 
   try {
     showLoading("Creating secure session...");

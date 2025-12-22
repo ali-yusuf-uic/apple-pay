@@ -13,6 +13,7 @@ You need to get these from your Eazypay account:
 3. **API Endpoint** (usually `https://api.eazypay.io`)
 
 ### Where to find them:
+
 - Go to your Eazypay Dashboard
 - Settings → API Keys
 - Copy your API Key and Merchant ID
@@ -35,6 +36,7 @@ PORT=3000
 ```
 
 ### Important:
+
 - ⚠️ **Never commit .env to GitHub** - it contains secrets
 - ✅ `.gitignore` already protects it
 - Store safely on your server/hosting
@@ -99,6 +101,7 @@ Your server sends this to Eazypay:
 ## 🔄 Response from Eazypay
 
 Success response:
+
 ```json
 {
   "success": true,
@@ -109,6 +112,7 @@ Success response:
 ```
 
 Error response:
+
 ```json
 {
   "success": false,
@@ -122,6 +126,7 @@ Error response:
 ## 🧪 Testing
 
 ### Local Testing:
+
 1. Make sure `.env` has your Eazypay credentials
 2. Start server: `npm start`
 3. Visit: `http://localhost:3000`
@@ -129,6 +134,7 @@ Error response:
 5. Check console for logs
 
 ### On Render:
+
 1. Add environment variables in Render dashboard:
    - Go to your Render service
    - Settings → Environment Variables
@@ -141,12 +147,14 @@ Error response:
 ## 🔐 Security Best Practices
 
 ### ✅ DO:
+
 - Store credentials in `.env` on server only
 - Use HTTPS (Render provides this automatically)
 - Validate payment on backend
 - Log transactions for audit
 
 ### ❌ DON'T:
+
 - Expose API keys in frontend code
 - Commit `.env` to GitHub
 - Use HTTP (always HTTPS)
@@ -159,11 +167,13 @@ Error response:
 ### Check logs:
 
 On Render:
+
 ```
 Logs → View logs in dashboard
 ```
 
 Look for messages like:
+
 - `Payment received: ...`
 - `Eazypay payment successful: txn_...`
 - `Eazypay error: ...`
@@ -171,16 +181,19 @@ Look for messages like:
 ### Common Errors:
 
 #### "Eazypay credentials missing in .env"
+
 - Add `EAZYPAY_API_KEY` and `EAZYPAY_MERCHANT_ID` to .env
 - Restart server
 
 #### "Payment processing failed"
+
 - Check API key is correct
 - Check Merchant ID is correct
 - Check Eazypay API endpoint is accessible
 - Check amount is valid
 
 #### "Invalid payment token"
+
 - Token might be expired (tokens expire quickly)
 - Make sure token is sent immediately after user authorizes
 - Check token format matches Eazypay requirements
@@ -201,11 +214,13 @@ Look for messages like:
 ## 📞 Support
 
 ### Eazypay Docs:
+
 - API Reference: https://docs.eazypay.io
 - Payment Processing: https://docs.eazypay.io/payments
 - Authentication: https://docs.eazypay.io/authentication
 
 ### Apple Pay Docs:
+
 - Apple Pay JS API: https://developer.apple.com/documentation/apple_pay_on_the_web
 - Payment Processing: https://developer.apple.com/documentation/apple_pay/payment_request_fields
 

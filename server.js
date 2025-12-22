@@ -190,6 +190,7 @@ app.post("/api/save-payment", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log("Domain verification endpoint: /.well-known/apple-developer-merchantid-domain-association");
+  console.log(
+    "Domain verification endpoint: /.well-known/apple-developer-merchantid-domain-association"
+  );
 });
-
