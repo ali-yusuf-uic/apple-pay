@@ -120,25 +120,8 @@ async function initiateApplePayment() {
   );
   
   try {
-    // Step 1: Request Apple Pay session from server
-    console.log("[PAYMENT] Step 1: Requesting Apple Pay session from server");
-    const sessionResponse = await fetch("/api/apple-pay-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        validationURL: "https://apple-pay-gateway.apple.com/paymentservices/paymentSession",
-        displayName: "UIC Payment"
-      }),
-    });
-
-    const sessionData = await sessionResponse.json();
-    if (!sessionData.success) {
-      throw new Error("Failed to create Apple Pay session: " + sessionData.message);
-    }
-    console.log("[PAYMENT] ✓ Step 1 complete: Apple Pay session created");
-
-    // Step 2: Create Apple Pay payment request
-    console.log("[PAYMENT] Step 2: Creating Apple Pay payment request");
+    // Create Apple Pay payment request FIRST (before any async calls)
+    console.log("[PAYMENT] Creating Apple Pay payment request");
     const request = {
       countryCode: "BH",
       currencyCode: CURRENCY,
@@ -152,11 +135,12 @@ async function initiateApplePayment() {
     };
     console.log("[PAYMENT] Payment request:", request);
 
-    // Step 3: Create and present Apple Pay session
-    console.log("[PAYMENT] Step 3: Creating ApplePaySession");
+    // Create ApplePaySession immediately (must be in user gesture handler)
+    console.log("[PAYMENT] Creating ApplePaySession");
     const session = new ApplePaySession(3, request);
     console.log("[PAYMENT] ✓ ApplePaySession created");
 
+    // Now set up event handlers
     // Handle validation event
     session.onvalidatemerchant = async (event) => {
       console.log("[PAYMENT] onvalidatemerchant event triggered");
@@ -171,11 +155,14 @@ async function initiateApplePayment() {
         });
 
         const data = await response.json();
+        console.log("[PAYMENT] Merchant validation response:", data);
+        
         if (data.session) {
           console.log("[PAYMENT] ✓ Merchant validation successful");
           session.completeMerchantValidation(data.session);
         } else {
-          throw new Error("Invalid merchant session");
+          console.error("[PAYMENT] Invalid merchant session response");
+          session.abort();
         }
       } catch (error) {
         console.error("[PAYMENT] Merchant validation error:", error);
@@ -211,8 +198,8 @@ async function initiateApplePayment() {
         const paymentData = event.payment;
         console.log("[PAYMENT] Payment data from Apple Pay:", paymentData);
 
-        // Send to Eazypay for processing
-        console.log("[PAYMENT] Sending payment token to Eazypay...");
+        // Send to backend for processing
+        console.log("[PAYMENT] Sending payment token to backend...");
         const saveResponse = await fetch("/api/process-apple-pay", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -225,7 +212,7 @@ async function initiateApplePayment() {
         });
 
         const saveResult = await saveResponse.json();
-        console.log("[PAYMENT] Eazypay response:", saveResult);
+        console.log("[PAYMENT] Backend response:", saveResult);
 
         hideLoading();
 
