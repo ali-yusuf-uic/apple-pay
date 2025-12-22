@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apple Pay Checkout</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="checkout-card">
+        <div class="header">
+          <h1>🍎 Apple Pay Checkout</h1>
+          <p>Fast and secure payment</p>
+        </div>
+
+        <div class="product-section">
+          <h2>Order Summary</h2>
+          <div class="product-item">
+            <span class="product-name">Premium Subscription</span>
+            <span class="product-price">0.10 BHD</span>
+          </div>
+          <div class="divider"></div>
+          <div class="total">
+            <span>Total:</span>
+            <span class="total-price">0.10 BHD</span>
+          </div>
+        </div>
+
+        <div class="payment-section">
+          <h2>Payment Method</h2>
+
+          <!-- Apple Pay Button -->
+          <div id="apple-pay-button-container">
+            <button id="apple-pay-button" class="apple-pay-btn">
+              <span>Pay with Apple Pay</span>
+            </button>
+          </div>
+
+          <!-- Status Message -->
+          <div id="payment-status" class="payment-status"></div>
+
+          <!-- Fallback for non-Apple browsers -->
+          <div id="fallback-section" class="fallback-section">
+            <p class="fallback-text">
+              Apple Pay is not available on this device/browser.
+            </p>
+            <button id="fallback-button" class="fallback-btn">
+              Pay with Card
+            </button>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <p class="info-text">💡 Your payment is secure and encrypted</p>
+        </div>
+      </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

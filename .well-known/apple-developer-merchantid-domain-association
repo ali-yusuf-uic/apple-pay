@@ -1,0 +1,9 @@
+PLACEHOLDER_APPLE_VERIFICATION_CONTENT
+
+Instructions:
+1. Go to Apple Developer Account
+2. Register your ngrok domain as a Merchant ID associated domain
+3. Apple will give you a verification file content
+4. Replace "PLACEHOLDER_APPLE_VERIFICATION_CONTENT" with that content
+5. Save this file
+6. The server will automatically serve it at /.well-known/apple-developer-merchantid-domain-association

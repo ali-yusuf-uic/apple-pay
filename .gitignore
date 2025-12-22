@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.*.local
+
+# Apple Pay certificates and keys (NEVER commit these!)
+certs/
+csr/
+*.cer
+*.key
+*.p8
+
+# OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+.next/
+
+# IDE
+.vscode
+.idea
+*.code-workspace
+
+# SAM build
+.aws-sam/
+samconfig.toml
+
+# Testing
+coverage/
+.nyc_output/
+
+# ngrok
+ngrok.exe
+ngrok
