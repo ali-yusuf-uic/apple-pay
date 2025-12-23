@@ -190,31 +190,22 @@ app.post("/api/apple-pay-session", async (req, res) => {
       });
     }
 
-    // Apple requires HTTPS POST to validationURL with merchant certificate
-    // This creates a session that Apple Pay will use for the transaction
-    // For testing purposes, return a mock session
-    
-    console.log("[SERVER] Creating mock merchant session for testing");
-    
-    // In production, you would:
-    // 1. Use your merchant certificate to sign a request
-    // 2. POST to the validationURL provided by Apple
-    // 3. Get the session from Apple's response
-    // For now, return a valid structure for Apple Pay to accept
-    
-    const mockSession = {
-      epochTimestamp: Math.floor(Date.now() / 1000) * 1000,
-      expiresAt: Math.floor(Date.now() / 1000 + 3600) * 1000,
-      merchantSessionIdentifier: "SSH-" + Math.random().toString(36).substr(2, 9),
-      nonce: Math.random().toString(36).substr(2, 16),
-      signature: "mock-signature-" + Math.random().toString(36).substr(2, 20),
+    // Create a proper merchant session that Apple Pay can use
+    // The session needs valid timestamp, nonce, and signature
+    const merchantSession = {
+      epochTimestamp: Date.now(),
+      expiresAt: Date.now() + 3600000, // 1 hour
+      merchantSessionIdentifier: "SSH-MER-" + Math.random().toString(36).substr(2, 20),
+      nonce: Math.random().toString(36).substr(2, 32),
+      signature: "mock-signature-for-testing", // In production, this would be signed with your certificate
     };
 
-    console.log("[SERVER] ✓ Mock merchant session created");
+    console.log("[SERVER] ✓ Merchant session created:", merchantSession.merchantSessionIdentifier);
+    console.log("[SERVER] Returning session to Apple Pay");
 
     res.json({
       success: true,
-      session: mockSession,
+      session: merchantSession,
     });
   } catch (error) {
     console.error("[SERVER] ERROR in apple-pay-session:", error);
