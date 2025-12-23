@@ -1,6 +1,6 @@
 // Apple Pay Configuration
 const MERCHANT_ID = "merchant.com.uic.sam-uic-offers";
-const TOTAL_AMOUNT = "0.10";
+const TOTAL_AMOUNT = "0.010";
 const CURRENCY = "BHD";
 
 // Eazypay configuration
