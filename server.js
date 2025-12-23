@@ -452,7 +452,7 @@ app.post("/api/apple-pay-session", async (req, res) => {
       // Call Apple's validation endpoint with client certificate
       const validationPayload = {
         merchantIdentifier: "merchant.com.uic.sam-uic-offers",
-        domainName: "sam-uic-offers.onrender.com",
+        domainName: "apple-pay-h5sj.onrender.com",
         displayName: "UIC Payment",
       };
 
