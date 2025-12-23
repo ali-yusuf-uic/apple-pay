@@ -736,7 +736,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
     // Create payment authorization request to Eazypay with Apple Pay token
     // Send the full paymentData object as JSON string
     const paymentPayload = {
-      apiOperation: "AUTHORIZE",
+      apiOperation: "PAY",
       order: {
         amount: parseFloat(amount).toFixed(2),
         currency: currency,
