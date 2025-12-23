@@ -680,13 +680,14 @@ app.post("/api/process-apple-pay", async (req, res) => {
 
     // Send payment to Eazypay for authorization
     console.log("[SERVER] Sending payment to Eazypay for authorization...");
-    
+
     const username = `merchant.${eazypayMerchantId}`;
-    const eazypayOrderId = orderId || "APPLEPAY-" + Math.floor(Date.now() / 1000);
-    
+    const eazypayOrderId =
+      orderId || "APPLEPAY-" + Math.floor(Date.now() / 1000);
+
     // Create a unique transaction ID for Eazypay
     const transactionId = "TXN-" + Math.floor(Date.now() / 1000);
-    
+
     // Use the correct endpoint: /merchant/{id}/order/{orderId}/transaction/{transactionId}
     const authUrl = `${eazypayBaseUrl}/merchant/${eazypayMerchantId}/order/${eazypayOrderId}/transaction/${transactionId}`;
 
@@ -696,7 +697,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
 
     // Create payment authorization request to Eazypay with Apple Pay token
     const paymentPayload = {
-      apiOperation: "PAY",
+      apiOperation: "AUTHORIZE",
       order: {
         amount: parseFloat(amount).toFixed(2),
         currency: currency,
@@ -752,7 +753,8 @@ app.post("/api/process-apple-pay", async (req, res) => {
     }
 
     // Check if transaction was successful
-    const transactionResult = eazypayData.transaction?.result || eazypayData.result;
+    const transactionResult =
+      eazypayData.transaction?.result || eazypayData.result;
 
     if (transactionResult !== "SUCCESS") {
       console.error("[SERVER] ERROR: Eazypay transaction not successful");
