@@ -118,7 +118,7 @@ async function initiateApplePayment() {
     TOTAL_AMOUNT,
     CURRENCY
   );
-  
+
   try {
     // Create Apple Pay payment request FIRST (before any async calls)
     console.log("[PAYMENT] Creating Apple Pay payment request");
@@ -130,8 +130,8 @@ async function initiateApplePayment() {
       total: {
         label: "UIC Payment",
         amount: TOTAL_AMOUNT,
-        type: "final"
-      }
+        type: "final",
+      },
     };
     console.log("[PAYMENT] Payment request:", request);
 
@@ -144,7 +144,7 @@ async function initiateApplePayment() {
     session.onvalidatemerchant = async (event) => {
       console.log("[PAYMENT] ========== MERCHANT VALIDATION ==========");
       console.log("[PAYMENT] Validation URL from Apple:", event.validationURL);
-      
+
       try {
         // For testing: Call backend to generate a session object
         // In production: Backend would POST to Apple's validation URL with merchant certificate
@@ -153,34 +153,55 @@ async function initiateApplePayment() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             validationURL: event.validationURL,
-            displayName: "UIC Payment"
+            displayName: "UIC Payment",
           }),
         });
 
         const data = await response.json();
-        console.log("[PAYMENT] Backend returned:", data.success ? "SUCCESS" : "FAILED");
-        
+        console.log(
+          "[PAYMENT] Backend returned:",
+          data.success ? "SUCCESS" : "FAILED"
+        );
+
         if (data.success && data.session) {
           // Extract session fields that Apple requires
           const sessionData = data.session;
-          
+
           console.log("[PAYMENT] Session fields:");
-          console.log("[PAYMENT] - epochTimestamp:", sessionData.epochTimestamp);
+          console.log(
+            "[PAYMENT] - epochTimestamp:",
+            sessionData.epochTimestamp
+          );
           console.log("[PAYMENT] - expiresAt:", sessionData.expiresAt);
-          console.log("[PAYMENT] - merchantSessionIdentifier:", sessionData.merchantSessionIdentifier);
-          console.log("[PAYMENT] - nonce:", sessionData.nonce ? "SET" : "MISSING");
-          console.log("[PAYMENT] - signature:", sessionData.signature ? "SET" : "MISSING");
-          
+          console.log(
+            "[PAYMENT] - merchantSessionIdentifier:",
+            sessionData.merchantSessionIdentifier
+          );
+          console.log(
+            "[PAYMENT] - nonce:",
+            sessionData.nonce ? "SET" : "MISSING"
+          );
+          console.log(
+            "[PAYMENT] - signature:",
+            sessionData.signature ? "SET" : "MISSING"
+          );
+
           console.log("[PAYMENT] Calling completeMerchantValidation...");
           session.completeMerchantValidation(sessionData);
           console.log("[PAYMENT] ✓ Merchant validation completed");
         } else {
-          console.error("[PAYMENT] ERROR: Backend returned error:", data.message);
+          console.error(
+            "[PAYMENT] ERROR: Backend returned error:",
+            data.message
+          );
           console.log("[PAYMENT] Will abort Apple Pay session");
           session.abort();
         }
       } catch (error) {
-        console.error("[PAYMENT] ERROR: Merchant validation fetch failed:", error.message);
+        console.error(
+          "[PAYMENT] ERROR: Merchant validation fetch failed:",
+          error.message
+        );
         console.error("[PAYMENT] Aborting Apple Pay session");
         session.abort();
       }
@@ -191,7 +212,7 @@ async function initiateApplePayment() {
       console.log("[PAYMENT] Payment method selected:", event.paymentMethod);
       session.completePaymentMethodSelection({
         newTotal: request.total,
-        newLineItems: []
+        newLineItems: [],
       });
     };
 
@@ -200,25 +221,36 @@ async function initiateApplePayment() {
       console.log("[PAYMENT] Shipping method selected");
       session.completeShippingMethodSelection({
         newTotal: request.total,
-        newLineItems: []
+        newLineItems: [],
       });
     };
 
     // Handle payment authorization
     session.onpaymentauthorized = async (event) => {
-      console.log("[PAYMENT] ========== onpaymentauthorized EVENT TRIGGERED ==========");
+      console.log(
+        "[PAYMENT] ========== onpaymentauthorized EVENT TRIGGERED =========="
+      );
       console.log("[PAYMENT] Full event object:", event);
       console.log("[PAYMENT] Payment object:", event.payment);
       showLoading("Processing Apple Pay payment...");
-      
+
       try {
         // Get the payment token from Apple
         const paymentData = event.payment;
         console.log("[PAYMENT] Payment data received:");
         console.log("[PAYMENT] - Token:", paymentData.token ? "YES" : "NO");
-        console.log("[PAYMENT] - Billing contact:", paymentData.billingContact ? "YES" : "NO");
-        console.log("[PAYMENT] - Shipping contact:", paymentData.shippingContact ? "YES" : "NO");
-        console.log("[PAYMENT] Full payment data:", JSON.stringify(paymentData, null, 2));
+        console.log(
+          "[PAYMENT] - Billing contact:",
+          paymentData.billingContact ? "YES" : "NO"
+        );
+        console.log(
+          "[PAYMENT] - Shipping contact:",
+          paymentData.shippingContact ? "YES" : "NO"
+        );
+        console.log(
+          "[PAYMENT] Full payment data:",
+          JSON.stringify(paymentData, null, 2)
+        );
 
         // Send to backend for processing
         console.log("[PAYMENT] Sending payment to backend...");
@@ -229,7 +261,7 @@ async function initiateApplePayment() {
             amount: TOTAL_AMOUNT,
             currency: CURRENCY,
             paymentData: JSON.stringify(paymentData),
-            source: "apple_pay_native"
+            source: "apple_pay_native",
           }),
         });
 
@@ -242,26 +274,44 @@ async function initiateApplePayment() {
         if (saveResult.success) {
           console.log("[PAYMENT] ✓ Backend confirmed success!");
           console.log("[PAYMENT] Calling session.completePayment(SUCCESS)");
-          const completeResult = session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          const completeResult = session.completePayment(
+            ApplePaySession.STATUS_SUCCESS
+          );
           console.log("[PAYMENT] completePayment result:", completeResult);
-          console.log("[PAYMENT] ========== APPLE PAY FLOW COMPLETED SUCCESSFULLY ==========");
-          showStatus("✓ Payment successful! Thank you for your purchase.", "success");
+          console.log(
+            "[PAYMENT] ========== APPLE PAY FLOW COMPLETED SUCCESSFULLY =========="
+          );
+          showStatus(
+            "✓ Payment successful! Thank you for your purchase.",
+            "success"
+          );
           setTimeout(() => {
             window.location.reload();
           }, 3000);
         } else {
-          console.error("[PAYMENT] ✗ Backend returned error:", saveResult.message);
+          console.error(
+            "[PAYMENT] ✗ Backend returned error:",
+            saveResult.message
+          );
           console.log("[PAYMENT] Calling session.completePayment(FAILURE)");
           session.completePayment(ApplePaySession.STATUS_FAILURE);
-          showStatus("Payment processing failed: " + (saveResult.message || "Unknown error"), "error");
+          showStatus(
+            "Payment processing failed: " +
+              (saveResult.message || "Unknown error"),
+            "error"
+          );
         }
       } catch (error) {
-        console.error("[PAYMENT] ========== PAYMENT AUTHORIZATION ERROR ==========");
+        console.error(
+          "[PAYMENT] ========== PAYMENT AUTHORIZATION ERROR =========="
+        );
         console.error("[PAYMENT] Error:", error);
         console.error("[PAYMENT] Error message:", error.message);
         console.error("[PAYMENT] Error stack:", error.stack);
         hideLoading();
-        console.log("[PAYMENT] Calling session.completePayment(FAILURE) due to error");
+        console.log(
+          "[PAYMENT] Calling session.completePayment(FAILURE) due to error"
+        );
         session.completePayment(ApplePaySession.STATUS_FAILURE);
         showStatus("Payment error: " + error.message, "error");
       }
@@ -276,7 +326,6 @@ async function initiateApplePayment() {
     console.log("[PAYMENT] Beginning Apple Pay session...");
     session.begin();
     console.log("[PAYMENT] ✓ Apple Pay sheet presented to user");
-
   } catch (error) {
     console.error("[PAYMENT] ========== APPLE PAY FLOW ERROR ==========");
     console.error("[PAYMENT] Error message:", error.message);

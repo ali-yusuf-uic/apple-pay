@@ -194,7 +194,7 @@ app.post("/api/apple-pay-session", async (req, res) => {
 
     // For production: Call Apple's validation endpoint with merchant certificate
     // For testing: Return a mock session that passes basic validation
-    // 
+    //
     // To properly validate in production:
     // 1. Read your merchant certificate from Render environment
     // 2. POST to validationURL with merchantIdentifier, domainName, displayName
@@ -202,20 +202,25 @@ app.post("/api/apple-pay-session", async (req, res) => {
     // 4. Return Apple's response
 
     console.log("[SERVER] Generating merchant session for testing...");
-    
+
     const now = Date.now();
     const merchantSession = {
       epochTimestamp: now,
       expiresAt: now + 3600000, // 1 hour
-      merchantSessionIdentifier: "SSH-" + Math.random().toString(36).substr(2, 32).toUpperCase(),
+      merchantSessionIdentifier:
+        "SSH-" + Math.random().toString(36).substr(2, 32).toUpperCase(),
       nonce: Math.random().toString(36).substr(2, 32).toLowerCase(),
-      signature: "testing-signature-" + Math.random().toString(36).substr(2, 16),
+      signature:
+        "testing-signature-" + Math.random().toString(36).substr(2, 16),
       operationalAnalyticsIdentifier: "",
-      pspId: ""
+      pspId: "",
     };
 
     console.log("[SERVER] ✓ Session generated:");
-    console.log("[SERVER] - merchantSessionIdentifier:", merchantSession.merchantSessionIdentifier);
+    console.log(
+      "[SERVER] - merchantSessionIdentifier:",
+      merchantSession.merchantSessionIdentifier
+    );
     console.log("[SERVER] - epochTimestamp:", merchantSession.epochTimestamp);
     console.log("[SERVER] - expiresAt:", merchantSession.expiresAt);
     console.log("[SERVER] - nonce:", merchantSession.nonce);
@@ -225,7 +230,6 @@ app.post("/api/apple-pay-session", async (req, res) => {
       success: true,
       session: merchantSession,
     });
-
   } catch (error) {
     console.error("[SERVER] ERROR in apple-pay-session:", error);
     res.status(500).json({
@@ -245,7 +249,11 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("[SERVER] - Amount:", amount);
     console.log("[SERVER] - Currency:", currency);
     console.log("[SERVER] - Source:", source);
-    console.log("[SERVER] - Payment data size:", paymentData ? paymentData.length : 0, "bytes");
+    console.log(
+      "[SERVER] - Payment data size:",
+      paymentData ? paymentData.length : 0,
+      "bytes"
+    );
 
     if (!amount || !paymentData) {
       console.error("[SERVER] ERROR: Missing amount or payment data");
@@ -267,11 +275,15 @@ app.post("/api/process-apple-pay", async (req, res) => {
     // Parse the payment data from Apple
     let applePaymentData;
     try {
-      applePaymentData = typeof paymentData === 'string' ? JSON.parse(paymentData) : paymentData;
+      applePaymentData =
+        typeof paymentData === "string" ? JSON.parse(paymentData) : paymentData;
       console.log("[SERVER] ✓ Apple payment data parsed successfully");
       console.log("[SERVER] Payment data keys:", Object.keys(applePaymentData));
     } catch (error) {
-      console.error("[SERVER] ERROR: Failed to parse payment data:", error.message);
+      console.error(
+        "[SERVER] ERROR: Failed to parse payment data:",
+        error.message
+      );
       return res.status(400).json({
         success: false,
         message: "Invalid payment data format: " + error.message,
@@ -290,14 +302,17 @@ app.post("/api/process-apple-pay", async (req, res) => {
     }
 
     console.log("[SERVER] ✓ Payment token received from Apple Pay");
-    console.log("[SERVER] Token type:", paymentToken.paymentMethod ? "Has paymentMethod" : "Unknown");
+    console.log(
+      "[SERVER] Token type:",
+      paymentToken.paymentMethod ? "Has paymentMethod" : "Unknown"
+    );
 
     // For now, just log the successful receipt of Apple Pay data
     // In a real system, you would:
     // 1. Send token to payment processor
     // 2. Verify payment
     // 3. Store in database
-    
+
     console.log("[SERVER] ✓ Payment successfully authorized with Apple Pay");
     console.log("[SERVER] Amount: " + amount + " " + currency);
     console.log("[SERVER] ========== PAYMENT PROCESSING COMPLETE ==========");
@@ -310,9 +325,10 @@ app.post("/api/process-apple-pay", async (req, res) => {
       currency: currency,
       source: "apple_pay",
     });
-
   } catch (error) {
-    console.error("[SERVER] ========== ERROR in /api/process-apple-pay ==========");
+    console.error(
+      "[SERVER] ========== ERROR in /api/process-apple-pay =========="
+    );
     console.error("[SERVER] Error message:", error.message);
     console.error("[SERVER] Error stack:", error.stack);
     res.status(500).json({
