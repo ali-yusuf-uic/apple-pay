@@ -1036,6 +1036,17 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("[SERVER] Sending Apple Pay payment to Eazypay...");
     console.log("[SERVER] Payload:", JSON.stringify(paymentPayload, null, 2));
 
+    // ========== EAZYPAY REQUEST ==========
+    console.log("\n[EZPAY REQUEST]");
+    console.log("Method: PUT");
+    console.log("URL:", authUrl);
+    console.log("Headers:", {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + Buffer.from(`merchant.${eazypayMerchantId}:***`).toString("base64"),
+    });
+    console.log("Body:", JSON.stringify(paymentPayload, null, 2));
+    console.log("[/EZPAY REQUEST]\n");
+
     const eazypayResponse = await fetch(authUrl, {
       method: "PUT",
       headers: {
@@ -1047,6 +1058,15 @@ app.post("/api/process-apple-pay", async (req, res) => {
 
     console.log("[SERVER] Eazypay response status:", eazypayResponse.status);
     const eazypayData = await eazypayResponse.json();
+    
+    // ========== EAZYPAY RESPONSE ==========
+    console.log("\n[EZPAY RESPONSE]");
+    console.log("Status Code:", eazypayResponse.status);
+    console.log("Status Text:", eazypayResponse.statusText);
+    console.log("Headers:", Object.fromEntries(eazypayResponse.headers.entries()));
+    console.log("Body:", JSON.stringify(eazypayData, null, 2));
+    console.log("[/EZPAY RESPONSE]\n");
+
     console.log(
       "[SERVER] Eazypay response data:",
       JSON.stringify(eazypayData, null, 2)
