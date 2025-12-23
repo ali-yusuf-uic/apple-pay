@@ -705,16 +705,26 @@ app.post("/api/process-apple-pay", async (req, res) => {
       });
     }
 
-    console.log("[SERVER] Payment data object type:", typeof paymentToken.paymentData);
-    console.log("[SERVER] Payment data keys:", Object.keys(paymentToken.paymentData));
-    
+    console.log(
+      "[SERVER] Payment data object type:",
+      typeof paymentToken.paymentData
+    );
+    console.log(
+      "[SERVER] Payment data keys:",
+      Object.keys(paymentToken.paymentData)
+    );
+
     // paymentData is an object with { data, signature, header, version }
     // Eazypay expects the full paymentData as JSON string
-    const paymentDataString = typeof paymentToken.paymentData === 'string' 
-      ? paymentToken.paymentData 
-      : JSON.stringify(paymentToken.paymentData);
-    
-    console.log("[SERVER] Payment data string length:", paymentDataString.length);
+    const paymentDataString =
+      typeof paymentToken.paymentData === "string"
+        ? paymentToken.paymentData
+        : JSON.stringify(paymentToken.paymentData);
+
+    console.log(
+      "[SERVER] Payment data string length:",
+      paymentDataString.length
+    );
 
     // Send payment to Eazypay for authorization
     console.log("[SERVER] Sending payment to Eazypay for authorization...");
@@ -734,7 +744,8 @@ app.post("/api/process-apple-pay", async (req, res) => {
       Buffer.from(`${username}:${eazypayPassword}`).toString("base64");
 
     // Create payment authorization request to Eazypay with Apple Pay token
-    // Send the full paymentData object as JSON string
+    // According to Eazypay docs, sourceOfFunds.type should be "CARD" for Apple Pay
+    // and the token should be in sourceOfFunds.provided.card.devicePayment.paymentToken
     const paymentPayload = {
       apiOperation: "PAY",
       order: {
@@ -742,12 +753,20 @@ app.post("/api/process-apple-pay", async (req, res) => {
         currency: currency,
         id: eazypayOrderId,
         description: "Apple Pay Payment from UIC",
+        walletProvider: "APPLE_PAY",
       },
       sourceOfFunds: {
-        type: "APPLE_PAY",
+        type: "CARD",
         provided: {
-          applePayToken: paymentDataString,
+          card: {
+            devicePayment: {
+              paymentToken: paymentDataString,
+            },
+          },
         },
+      },
+      transaction: {
+        source: "INTERNET",
       },
     };
 
