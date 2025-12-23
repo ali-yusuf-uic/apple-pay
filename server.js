@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const https = require("https");
+const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
@@ -180,7 +181,7 @@ app.post("/api/apple-pay-session", async (req, res) => {
   try {
     const { validationURL } = req.body;
 
-    console.log("[SERVER] Apple Pay merchant validation endpoint called");
+    console.log("[SERVER] ========== MERCHANT VALIDATION REQUEST ==========");
     console.log("[SERVER] Validation URL:", validationURL);
 
     if (!validationURL) {
@@ -191,23 +192,40 @@ app.post("/api/apple-pay-session", async (req, res) => {
       });
     }
 
-    // Create a proper merchant session that Apple Pay can use
-    // The session needs valid timestamp, nonce, and signature
+    // For production: Call Apple's validation endpoint with merchant certificate
+    // For testing: Return a mock session that passes basic validation
+    // 
+    // To properly validate in production:
+    // 1. Read your merchant certificate from Render environment
+    // 2. POST to validationURL with merchantIdentifier, domainName, displayName
+    // 3. Use certificate to sign the request
+    // 4. Return Apple's response
+
+    console.log("[SERVER] Generating merchant session for testing...");
+    
+    const now = Date.now();
     const merchantSession = {
-      epochTimestamp: Date.now(),
-      expiresAt: Date.now() + 3600000, // 1 hour
-      merchantSessionIdentifier: "SSH-MER-" + Math.random().toString(36).substr(2, 20),
-      nonce: Math.random().toString(36).substr(2, 32),
-      signature: "mock-signature-for-testing", // In production, this would be signed with your certificate
+      epochTimestamp: now,
+      expiresAt: now + 3600000, // 1 hour
+      merchantSessionIdentifier: "SSH-" + Math.random().toString(36).substr(2, 32).toUpperCase(),
+      nonce: Math.random().toString(36).substr(2, 32).toLowerCase(),
+      signature: "testing-signature-" + Math.random().toString(36).substr(2, 16),
+      operationalAnalyticsIdentifier: "",
+      pspId: ""
     };
 
-    console.log("[SERVER] ✓ Merchant session created:", merchantSession.merchantSessionIdentifier);
-    console.log("[SERVER] Returning session to Apple Pay");
+    console.log("[SERVER] ✓ Session generated:");
+    console.log("[SERVER] - merchantSessionIdentifier:", merchantSession.merchantSessionIdentifier);
+    console.log("[SERVER] - epochTimestamp:", merchantSession.epochTimestamp);
+    console.log("[SERVER] - expiresAt:", merchantSession.expiresAt);
+    console.log("[SERVER] - nonce:", merchantSession.nonce);
+    console.log("[SERVER] - signature:", merchantSession.signature);
 
     res.json({
       success: true,
       session: merchantSession,
     });
+
   } catch (error) {
     console.error("[SERVER] ERROR in apple-pay-session:", error);
     res.status(500).json({

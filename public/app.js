@@ -140,13 +140,14 @@ async function initiateApplePayment() {
     const session = new ApplePaySession(3, request);
     console.log("[PAYMENT] ✓ ApplePaySession created");
 
-    // Now set up event handlers
-    // Handle validation event
+    // Handle validation event - simplified for testing
     session.onvalidatemerchant = async (event) => {
-      console.log("[PAYMENT] onvalidatemerchant event triggered");
+      console.log("[PAYMENT] ========== MERCHANT VALIDATION ==========");
       console.log("[PAYMENT] Validation URL from Apple:", event.validationURL);
       
       try {
+        // For testing: Call backend to generate a session object
+        // In production: Backend would POST to Apple's validation URL with merchant certificate
         const response = await fetch("/api/apple-pay-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -157,18 +158,30 @@ async function initiateApplePayment() {
         });
 
         const data = await response.json();
-        console.log("[PAYMENT] Merchant validation response:", data);
+        console.log("[PAYMENT] Backend returned:", data.success ? "SUCCESS" : "FAILED");
         
         if (data.success && data.session) {
-          console.log("[PAYMENT] ✓ Merchant validation successful");
-          console.log("[PAYMENT] Session object:", data.session);
-          session.completeMerchantValidation(data.session);
+          // Extract session fields that Apple requires
+          const sessionData = data.session;
+          
+          console.log("[PAYMENT] Session fields:");
+          console.log("[PAYMENT] - epochTimestamp:", sessionData.epochTimestamp);
+          console.log("[PAYMENT] - expiresAt:", sessionData.expiresAt);
+          console.log("[PAYMENT] - merchantSessionIdentifier:", sessionData.merchantSessionIdentifier);
+          console.log("[PAYMENT] - nonce:", sessionData.nonce ? "SET" : "MISSING");
+          console.log("[PAYMENT] - signature:", sessionData.signature ? "SET" : "MISSING");
+          
+          console.log("[PAYMENT] Calling completeMerchantValidation...");
+          session.completeMerchantValidation(sessionData);
+          console.log("[PAYMENT] ✓ Merchant validation completed");
         } else {
-          console.error("[PAYMENT] ERROR: Invalid merchant session response:", data);
+          console.error("[PAYMENT] ERROR: Backend returned error:", data.message);
+          console.log("[PAYMENT] Will abort Apple Pay session");
           session.abort();
         }
       } catch (error) {
-        console.error("[PAYMENT] ERROR: Merchant validation error:", error);
+        console.error("[PAYMENT] ERROR: Merchant validation fetch failed:", error.message);
+        console.error("[PAYMENT] Aborting Apple Pay session");
         session.abort();
       }
     };
