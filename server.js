@@ -34,10 +34,7 @@ function loadCertificates() {
 
   if (process.env.APPLE_PAY_KEY) {
     try {
-      applePayKey = Buffer.from(
-        process.env.APPLE_PAY_KEY,
-        "base64"
-      ).toString();
+      applePayKey = Buffer.from(process.env.APPLE_PAY_KEY, "base64").toString();
       console.log("[SERVER] ✓ Loaded APPLE_PAY_KEY from environment");
     } catch (error) {
       console.error(
@@ -69,6 +66,9 @@ function loadCertificates() {
         "base64"
       ).toString();
       console.log("[SERVER] ✓ Loaded MERCHANT_ID_KEY from environment");
+      console.log("[SERVER] MERCHANT_ID_KEY length:", merchantIdKey.length);
+      console.log("[SERVER] MERCHANT_ID_KEY first 50 chars:", merchantIdKey.substring(0, 50));
+      console.log("[SERVER] MERCHANT_ID_KEY last 50 chars:", merchantIdKey.substring(merchantIdKey.length - 50));
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading MERCHANT_ID_KEY from env:",
@@ -155,7 +155,10 @@ function loadCertificates() {
     "[SERVER] - APPLE_PAY_CERT:",
     applePayCert ? "LOADED" : "NOT FOUND"
   );
-  console.log("[SERVER] - APPLE_PAY_KEY:", applePayKey ? "LOADED" : "NOT FOUND");
+  console.log(
+    "[SERVER] - APPLE_PAY_KEY:",
+    applePayKey ? "LOADED" : "NOT FOUND"
+  );
   console.log(
     "[SERVER] - MERCHANT_ID_CERT:",
     merchantIdCert ? "LOADED" : "NOT FOUND"
@@ -377,7 +380,9 @@ app.post("/api/apple-pay-session", async (req, res) => {
 
     // Check if we have both certificate and key
     if (!merchantIdCert || !merchantIdKey) {
-      console.warn("[SERVER] WARNING: MERCHANT_ID_CERT or MERCHANT_ID_KEY not loaded");
+      console.warn(
+        "[SERVER] WARNING: MERCHANT_ID_CERT or MERCHANT_ID_KEY not loaded"
+      );
       console.warn("[SERVER] Using mock session for testing");
       console.warn(
         "[SERVER] For production: Add MERCHANT_ID_CERT and MERCHANT_ID_KEY to Render environment variables"
@@ -401,7 +406,9 @@ app.post("/api/apple-pay-session", async (req, res) => {
     console.log(
       "[SERVER] ✓ MERCHANT_ID_CERT and MERCHANT_ID_KEY loaded, proceeding with validation"
     );
-    console.log("[SERVER] Calling Apple's validation endpoint with client certificate...");
+    console.log(
+      "[SERVER] Calling Apple's validation endpoint with client certificate..."
+    );
 
     try {
       // Call Apple's validation endpoint with client certificate
@@ -412,6 +419,12 @@ app.post("/api/apple-pay-session", async (req, res) => {
       };
 
       console.log("[SERVER] Validation payload:", validationPayload);
+
+      // Log certificate/key info for diagnostics
+      console.log("[SERVER] MERCHANT_ID_CERT length:", merchantIdCert.length);
+      console.log("[SERVER] MERCHANT_ID_CERT first 60 chars:", merchantIdCert.substring(0, 60));
+      console.log("[SERVER] MERCHANT_ID_KEY length:", merchantIdKey.length);
+      console.log("[SERVER] MERCHANT_ID_KEY first 60 chars:", merchantIdKey.substring(0, 60));
 
       // Use Node.js https module to send client certificate
       const httpsOptions = {
@@ -428,7 +441,9 @@ app.post("/api/apple-pay-session", async (req, res) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Content-Length": Buffer.byteLength(JSON.stringify(validationPayload)),
+            "Content-Length": Buffer.byteLength(
+              JSON.stringify(validationPayload)
+            ),
           },
           cert: merchantIdCert,
           key: merchantIdKey,
@@ -450,10 +465,9 @@ app.post("/api/apple-pay-session", async (req, res) => {
         });
 
         httpsRequest.on("error", (error) => {
-          console.error(
-            "[SERVER] HTTPS request error:",
-            error.message
-          );
+          console.error("[SERVER] HTTPS request error:", error.message);
+          console.error("[SERVER] Error code:", error.code);
+          console.error("[SERVER] Error library:", error.library);
           reject(error);
         });
 
