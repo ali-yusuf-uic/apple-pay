@@ -10,51 +10,160 @@ const app = express();
 // Load certificates from environment or local files
 let applePayCert = null;
 let merchantIdCert = null;
+let applePayKey = null;
+let merchantIdKey = null;
 
 function loadCertificates() {
-  console.log("[SERVER] Loading certificates...");
-  
+  console.log("[SERVER] Loading certificates and private keys...");
+
   // Try to load from environment variables (for Render)
   if (process.env.APPLE_PAY_CERT) {
     try {
-      applePayCert = Buffer.from(process.env.APPLE_PAY_CERT, "base64").toString();
+      applePayCert = Buffer.from(
+        process.env.APPLE_PAY_CERT,
+        "base64"
+      ).toString();
       console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment");
     } catch (error) {
-      console.error("[SERVER] ERROR loading APPLE_PAY_CERT from env:", error.message);
+      console.error(
+        "[SERVER] ERROR loading APPLE_PAY_CERT from env:",
+        error.message
+      );
     }
   }
-  
+
+  if (process.env.APPLE_PAY_KEY) {
+    try {
+      applePayKey = Buffer.from(
+        process.env.APPLE_PAY_KEY,
+        "base64"
+      ).toString();
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_KEY from environment");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading APPLE_PAY_KEY from env:",
+        error.message
+      );
+    }
+  }
+
   if (process.env.MERCHANT_ID_CERT) {
     try {
-      merchantIdCert = Buffer.from(process.env.MERCHANT_ID_CERT, "base64").toString();
+      merchantIdCert = Buffer.from(
+        process.env.MERCHANT_ID_CERT,
+        "base64"
+      ).toString();
       console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment");
     } catch (error) {
-      console.error("[SERVER] ERROR loading MERCHANT_ID_CERT from env:", error.message);
+      console.error(
+        "[SERVER] ERROR loading MERCHANT_ID_CERT from env:",
+        error.message
+      );
+    }
+  }
+
+  if (process.env.MERCHANT_ID_KEY) {
+    try {
+      merchantIdKey = Buffer.from(
+        process.env.MERCHANT_ID_KEY,
+        "base64"
+      ).toString();
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_KEY from environment");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading MERCHANT_ID_KEY from env:",
+        error.message
+      );
     }
   }
 
   // Try to load from local files (for development)
-  if (!applePayCert && fs.existsSync(path.join(__dirname, "certs", "apple_pay.cer"))) {
+  if (
+    !applePayCert &&
+    fs.existsSync(path.join(__dirname, "certs", "apple_pay.cer"))
+  ) {
     try {
-      applePayCert = fs.readFileSync(path.join(__dirname, "certs", "apple_pay.cer"), "utf8");
+      applePayCert = fs.readFileSync(
+        path.join(__dirname, "certs", "apple_pay.cer"),
+        "utf8"
+      );
       console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from local file");
     } catch (error) {
-      console.error("[SERVER] ERROR loading local apple_pay.cer:", error.message);
+      console.error(
+        "[SERVER] ERROR loading local apple_pay.cer:",
+        error.message
+      );
     }
   }
 
-  if (!merchantIdCert && fs.existsSync(path.join(__dirname, "certs", "merchant_id.cer"))) {
+  if (
+    !applePayKey &&
+    fs.existsSync(path.join(__dirname, "csr", "paymentprocessing.key"))
+  ) {
     try {
-      merchantIdCert = fs.readFileSync(path.join(__dirname, "certs", "merchant_id.cer"), "utf8");
+      applePayKey = fs.readFileSync(
+        path.join(__dirname, "csr", "paymentprocessing.key"),
+        "utf8"
+      );
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_KEY from local file");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading local paymentprocessing.key:",
+        error.message
+      );
+    }
+  }
+
+  if (
+    !merchantIdCert &&
+    fs.existsSync(path.join(__dirname, "certs", "merchant_id.cer"))
+  ) {
+    try {
+      merchantIdCert = fs.readFileSync(
+        path.join(__dirname, "certs", "merchant_id.cer"),
+        "utf8"
+      );
       console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from local file");
     } catch (error) {
-      console.error("[SERVER] ERROR loading local merchant_id.cer:", error.message);
+      console.error(
+        "[SERVER] ERROR loading local merchant_id.cer:",
+        error.message
+      );
     }
   }
 
-  console.log("[SERVER] Certificate status:");
-  console.log("[SERVER] - APPLE_PAY_CERT:", applePayCert ? "LOADED" : "NOT FOUND");
-  console.log("[SERVER] - MERCHANT_ID_CERT:", merchantIdCert ? "LOADED" : "NOT FOUND");
+  if (
+    !merchantIdKey &&
+    fs.existsSync(path.join(__dirname, "csr", "merchantidentity.key"))
+  ) {
+    try {
+      merchantIdKey = fs.readFileSync(
+        path.join(__dirname, "csr", "merchantidentity.key"),
+        "utf8"
+      );
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_KEY from local file");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading local merchantidentity.key:",
+        error.message
+      );
+    }
+  }
+
+  console.log("[SERVER] Certificate and Key status:");
+  console.log(
+    "[SERVER] - APPLE_PAY_CERT:",
+    applePayCert ? "LOADED" : "NOT FOUND"
+  );
+  console.log("[SERVER] - APPLE_PAY_KEY:", applePayKey ? "LOADED" : "NOT FOUND");
+  console.log(
+    "[SERVER] - MERCHANT_ID_CERT:",
+    merchantIdCert ? "LOADED" : "NOT FOUND"
+  );
+  console.log(
+    "[SERVER] - MERCHANT_ID_KEY:",
+    merchantIdKey ? "LOADED" : "NOT FOUND"
+  );
 }
 
 // Middleware
@@ -240,7 +349,9 @@ app.get("/api/debug", (req, res) => {
       eazypayMerchantId: process.env.EAZYPAY_MERCHANT_ID ? "SET" : "NOT SET",
       eazypayPassword: process.env.EAZYPAY_PASSWORD ? "SET" : "NOT SET",
       applePayCert: applePayCert ? "LOADED" : "NOT FOUND",
+      applePayKey: applePayKey ? "LOADED" : "NOT FOUND",
       merchantIdCert: merchantIdCert ? "LOADED" : "NOT FOUND",
+      merchantIdKey: merchantIdKey ? "LOADED" : "NOT FOUND",
     },
     timestamp: new Date().toISOString(),
   });
@@ -262,11 +373,16 @@ app.post("/api/apple-pay-session", async (req, res) => {
     }
 
     // Check if we have certificates
-    if (!merchantIdCert) {
-      console.warn("[SERVER] WARNING: MERCHANT_ID_CERT not loaded");
+    // The new check is below after the validationURL check
+
+    // Check if we have both certificate and key
+    if (!merchantIdCert || !merchantIdKey) {
+      console.warn("[SERVER] WARNING: MERCHANT_ID_CERT or MERCHANT_ID_KEY not loaded");
       console.warn("[SERVER] Using mock session for testing");
-      console.warn("[SERVER] For production: Add MERCHANT_ID_CERT to Render environment variables");
-      
+      console.warn(
+        "[SERVER] For production: Add MERCHANT_ID_CERT and MERCHANT_ID_KEY to Render environment variables"
+      );
+
       // Return a test session
       const testSession = {
         epochTimestamp: Math.floor(Date.now()),
@@ -282,11 +398,13 @@ app.post("/api/apple-pay-session", async (req, res) => {
       });
     }
 
-    console.log("[SERVER] ✓ MERCHANT_ID_CERT loaded, proceeding with validation");
-    console.log("[SERVER] Calling Apple's validation endpoint...");
+    console.log(
+      "[SERVER] ✓ MERCHANT_ID_CERT and MERCHANT_ID_KEY loaded, proceeding with validation"
+    );
+    console.log("[SERVER] Calling Apple's validation endpoint with client certificate...");
 
     try {
-      // Call Apple's validation endpoint with certificate
+      // Call Apple's validation endpoint with client certificate
       const validationPayload = {
         merchantIdentifier: "merchant.com.uic.sam-uic-offers",
         domainName: "sam-uic-offers.onrender.com",
@@ -295,30 +413,97 @@ app.post("/api/apple-pay-session", async (req, res) => {
 
       console.log("[SERVER] Validation payload:", validationPayload);
 
-      // Make HTTPS POST to Apple with certificate
-      const appleResponse = await fetch(validationURL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(validationPayload),
+      // Use Node.js https module to send client certificate
+      const httpsOptions = {
+        cert: merchantIdCert,
+        key: merchantIdKey,
+        rejectUnauthorized: false, // Allow self-signed certificates during development
+      };
+
+      const appleResponse = await new Promise((resolve, reject) => {
+        const url = new URL(validationURL);
+        const options = {
+          hostname: url.hostname,
+          path: url.pathname,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(JSON.stringify(validationPayload)),
+          },
+          cert: merchantIdCert,
+          key: merchantIdKey,
+          rejectUnauthorized: false,
+        };
+
+        const httpsRequest = https.request(options, (appleRes) => {
+          let data = "";
+          appleRes.on("data", (chunk) => {
+            data += chunk;
+          });
+          appleRes.on("end", () => {
+            resolve({
+              status: appleRes.statusCode,
+              data: data,
+              headers: appleRes.headers,
+            });
+          });
+        });
+
+        httpsRequest.on("error", (error) => {
+          console.error(
+            "[SERVER] HTTPS request error:",
+            error.message
+          );
+          reject(error);
+        });
+
+        httpsRequest.write(JSON.stringify(validationPayload));
+        httpsRequest.end();
       });
 
       console.log("[SERVER] Apple response status:", appleResponse.status);
 
-      if (appleResponse.ok) {
-        const appleSession = await appleResponse.json();
-        console.log("[SERVER] ✓ Got valid session from Apple");
-        
-        return res.json({
-          success: true,
-          session: appleSession,
-        });
+      if (appleResponse.status === 200) {
+        try {
+          const appleSession = JSON.parse(appleResponse.data);
+          console.log("[SERVER] ✓ Got valid session from Apple");
+          console.log(
+            "[SERVER] Session details:",
+            JSON.stringify(appleSession, null, 2)
+          );
+
+          return res.json({
+            success: true,
+            session: appleSession,
+          });
+        } catch (parseError) {
+          console.error(
+            "[SERVER] ERROR parsing Apple response:",
+            parseError.message
+          );
+          console.error("[SERVER] Raw response:", appleResponse.data);
+
+          // Fallback to test session
+          const testSession = {
+            epochTimestamp: Math.floor(Date.now()),
+            expiresAt: Math.floor(Date.now() + 3600000),
+            merchantSessionIdentifier: "SSH-" + Date.now(),
+            nonce: "nonce-" + Math.random().toString(36).substr(2, 16),
+            signature: "sig-" + Math.random().toString(36).substr(2, 16),
+          };
+
+          return res.json({
+            success: true,
+            session: testSession,
+          });
+        }
       } else {
-        const errorText = await appleResponse.text();
-        console.error("[SERVER] ERROR: Apple returned status", appleResponse.status);
-        console.error("[SERVER] Response:", errorText);
-        
+        console.error(
+          "[SERVER] ERROR: Apple returned status",
+          appleResponse.status
+        );
+        console.error("[SERVER] Response:", appleResponse.data);
+
         // Fallback to test session
         const testSession = {
           epochTimestamp: Math.floor(Date.now()),
@@ -336,7 +521,8 @@ app.post("/api/apple-pay-session", async (req, res) => {
       }
     } catch (appleError) {
       console.error("[SERVER] ERROR calling Apple:", appleError.message);
-      
+      console.error("[SERVER] Error details:", appleError);
+
       // Return test session on error
       const testSession = {
         epochTimestamp: Math.floor(Date.now()),
