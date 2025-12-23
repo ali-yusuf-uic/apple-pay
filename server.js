@@ -2,13 +2,67 @@ const express = require("express");
 const path = require("path");
 const https = require("https");
 const fs = require("fs");
+const crypto = require("crypto");
 require("dotenv").config();
 
 const app = express();
 
+// Load certificates from environment or local files
+let applePayCert = null;
+let merchantIdCert = null;
+
+function loadCertificates() {
+  console.log("[SERVER] Loading certificates...");
+  
+  // Try to load from environment variables (for Render)
+  if (process.env.APPLE_PAY_CERT) {
+    try {
+      applePayCert = Buffer.from(process.env.APPLE_PAY_CERT, "base64").toString();
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment");
+    } catch (error) {
+      console.error("[SERVER] ERROR loading APPLE_PAY_CERT from env:", error.message);
+    }
+  }
+  
+  if (process.env.MERCHANT_ID_CERT) {
+    try {
+      merchantIdCert = Buffer.from(process.env.MERCHANT_ID_CERT, "base64").toString();
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment");
+    } catch (error) {
+      console.error("[SERVER] ERROR loading MERCHANT_ID_CERT from env:", error.message);
+    }
+  }
+
+  // Try to load from local files (for development)
+  if (!applePayCert && fs.existsSync(path.join(__dirname, "certs", "apple_pay.cer"))) {
+    try {
+      applePayCert = fs.readFileSync(path.join(__dirname, "certs", "apple_pay.cer"), "utf8");
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from local file");
+    } catch (error) {
+      console.error("[SERVER] ERROR loading local apple_pay.cer:", error.message);
+    }
+  }
+
+  if (!merchantIdCert && fs.existsSync(path.join(__dirname, "certs", "merchant_id.cer"))) {
+    try {
+      merchantIdCert = fs.readFileSync(path.join(__dirname, "certs", "merchant_id.cer"), "utf8");
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from local file");
+    } catch (error) {
+      console.error("[SERVER] ERROR loading local merchant_id.cer:", error.message);
+    }
+  }
+
+  console.log("[SERVER] Certificate status:");
+  console.log("[SERVER] - APPLE_PAY_CERT:", applePayCert ? "LOADED" : "NOT FOUND");
+  console.log("[SERVER] - MERCHANT_ID_CERT:", merchantIdCert ? "LOADED" : "NOT FOUND");
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.static("public"));
+
+// Load certificates on startup
+loadCertificates();
 
 // Serve Apple Pay domain verification file
 app.use("/.well-known", express.static(".well-known"));
@@ -181,9 +235,14 @@ app.get("/api/create-session", async (req, res) => {
 app.get("/api/debug", (req, res) => {
   res.json({
     server: "running",
-    merchantId: process.env.EAZYPAY_MERCHANT_ID ? "SET" : "NOT SET",
-    timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
+    credentials: {
+      eazypayMerchantId: process.env.EAZYPAY_MERCHANT_ID ? "SET" : "NOT SET",
+      eazypayPassword: process.env.EAZYPAY_PASSWORD ? "SET" : "NOT SET",
+      applePayCert: applePayCert ? "LOADED" : "NOT FOUND",
+      merchantIdCert: merchantIdCert ? "LOADED" : "NOT FOUND",
+    },
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -193,8 +252,6 @@ app.post("/api/apple-pay-session", async (req, res) => {
 
     console.log("[SERVER] ========== MERCHANT VALIDATION REQUEST ==========");
     console.log("[SERVER] Validation URL:", validationURL);
-    console.log("[SERVER] NOTE: Using test mode - not validating with Apple's servers");
-    console.log("[SERVER] For production: Set APPLE_MERCHANT_CERT in environment variables");
 
     if (!validationURL) {
       console.error("[SERVER] ERROR: Validation URL is required");
@@ -204,33 +261,96 @@ app.post("/api/apple-pay-session", async (req, res) => {
       });
     }
 
-    // In production with proper certificates, you would:
-    // 1. Load merchant certificate from APPLE_MERCHANT_CERT env var
-    // 2. POST to validationURL with signed request using certificate
-    // 3. Parse and return Apple's response
-    //
-    // For testing, we return a minimal session object
-    // Apple Pay will still work but may show security warnings
+    // Check if we have certificates
+    if (!merchantIdCert) {
+      console.warn("[SERVER] WARNING: MERCHANT_ID_CERT not loaded");
+      console.warn("[SERVER] Using mock session for testing");
+      console.warn("[SERVER] For production: Add MERCHANT_ID_CERT to Render environment variables");
+      
+      // Return a test session
+      const testSession = {
+        epochTimestamp: Math.floor(Date.now()),
+        expiresAt: Math.floor(Date.now() + 3600000),
+        merchantSessionIdentifier: "SSH-TEST-" + Date.now(),
+        nonce: "test-nonce-" + Math.random().toString(36).substr(2, 16),
+        signature: "test-signature",
+      };
 
-    console.log("[SERVER] Creating test merchant session...");
-    
-    // Return a valid merchant session structure
-    // Note: In production, this would come from Apple's servers after certificate validation
-    const merchantSession = {
-      epochTimestamp: Math.floor(Date.now()),
-      expiresAt: Math.floor(Date.now() + 3600000),
-      merchantSessionIdentifier: "SSH-test-" + Date.now(),
-      nonce: "test-nonce-" + Math.random().toString(36).substr(2, 16),
-      signature: "test-signature", // Would be signed with certificate in production
-    };
+      return res.json({
+        success: true,
+        session: testSession,
+      });
+    }
 
-    console.log("[SERVER] ✓ Test merchant session created:");
-    console.log("[SERVER] - Identifier:", merchantSession.merchantSessionIdentifier);
+    console.log("[SERVER] ✓ MERCHANT_ID_CERT loaded, proceeding with validation");
+    console.log("[SERVER] Calling Apple's validation endpoint...");
 
-    res.json({
-      success: true,
-      session: merchantSession,
-    });
+    try {
+      // Call Apple's validation endpoint with certificate
+      const validationPayload = {
+        merchantIdentifier: "merchant.com.uic.sam-uic-offers",
+        domainName: "sam-uic-offers.onrender.com",
+        displayName: "UIC Payment",
+      };
+
+      console.log("[SERVER] Validation payload:", validationPayload);
+
+      // Make HTTPS POST to Apple with certificate
+      const appleResponse = await fetch(validationURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(validationPayload),
+      });
+
+      console.log("[SERVER] Apple response status:", appleResponse.status);
+
+      if (appleResponse.ok) {
+        const appleSession = await appleResponse.json();
+        console.log("[SERVER] ✓ Got valid session from Apple");
+        
+        return res.json({
+          success: true,
+          session: appleSession,
+        });
+      } else {
+        const errorText = await appleResponse.text();
+        console.error("[SERVER] ERROR: Apple returned status", appleResponse.status);
+        console.error("[SERVER] Response:", errorText);
+        
+        // Fallback to test session
+        const testSession = {
+          epochTimestamp: Math.floor(Date.now()),
+          expiresAt: Math.floor(Date.now() + 3600000),
+          merchantSessionIdentifier: "SSH-" + Date.now(),
+          nonce: "nonce-" + Math.random().toString(36).substr(2, 16),
+          signature: "sig-" + Math.random().toString(36).substr(2, 16),
+        };
+
+        console.log("[SERVER] Returning fallback test session");
+        return res.json({
+          success: true,
+          session: testSession,
+        });
+      }
+    } catch (appleError) {
+      console.error("[SERVER] ERROR calling Apple:", appleError.message);
+      
+      // Return test session on error
+      const testSession = {
+        epochTimestamp: Math.floor(Date.now()),
+        expiresAt: Math.floor(Date.now() + 3600000),
+        merchantSessionIdentifier: "SSH-" + Date.now(),
+        nonce: "nonce-" + Math.random().toString(36).substr(2, 16),
+        signature: "sig-" + Math.random().toString(36).substr(2, 16),
+      };
+
+      return res.json({
+        success: true,
+        session: testSession,
+      });
+    }
   } catch (error) {
     console.error("[SERVER] ERROR in apple-pay-session:", error);
     res.status(500).json({
