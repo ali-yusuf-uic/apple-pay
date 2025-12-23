@@ -3,6 +3,7 @@ const path = require("path");
 const https = require("https");
 const fs = require("fs");
 const crypto = require("crypto");
+const KJUR = require("jsrsasign");
 require("dotenv").config();
 
 const app = express();
@@ -207,50 +208,110 @@ function loadCertificates() {
   );
 }
 
-// Function to decrypt Apple Pay token
+// Function to decrypt Apple Pay token using server-side decryption
 // Apple Pay token is encrypted with Elliptic Curve Integrated Encryption Scheme (ECIES)
-// We need to decrypt it using our Apple Pay private key
-function decryptApplePayToken(encryptedToken) {
+// Reference: https://developer.apple.com/documentation/passkit/payment_token_format_reference
+function decryptApplePayToken(encryptedToken, merchantCert) {
   try {
-    console.log("[SERVER] Starting Apple Pay token decryption...");
+    console.log("[SERVER] Starting Apple Pay token decryption (server-side)...");
 
-    // The encryptedToken should be a JSON object with: data, signature, header, version
+    // Parse token if it's a string
     let tokenObj = encryptedToken;
     if (typeof encryptedToken === "string") {
       tokenObj = JSON.parse(encryptedToken);
     }
 
-    if (!tokenObj.data || !tokenObj.header) {
-      throw new Error("Invalid token structure - missing data or header");
+    if (!tokenObj.data || !tokenObj.header || !tokenObj.signature) {
+      throw new Error("Invalid token structure - missing required fields");
     }
 
-    console.log("[SERVER] Token structure validated");
-    console.log("[SERVER] Token version:", tokenObj.version);
-
-    // For server-side decryption, we need the Apple Pay certificate's private key
-    // The decryption process is complex and requires:
-    // 1. Extract ephemeralPublicKey from header
-    // 2. Perform ECDH key agreement
-    // 3. Decrypt the data using AES-256-GCM
-
-    // For now, we'll extract what we can from the token
-    // In production, you would use Apple's decryption library or equivalent
-    
     const header = tokenObj.header;
-    console.log("[SERVER] Transaction ID from token:", header.transactionId);
-    console.log("[SERVER] Ephemeral Public Key:", header.ephemeralPublicKey?.substring(0, 50) + "...");
+    const encryptedData = Buffer.from(tokenObj.data, "base64");
+    const ephemeralPublicKeyB64 = header.ephemeralPublicKey;
+    const transactionId = header.transactionId;
 
-    // Since full ECIES decryption is complex without Apple's SDK,
-    // we'll use an alternative approach: send the token to Eazypay for decryption
-    // but with corrected field naming
-    
+    console.log("[SERVER] Token version:", tokenObj.version);
+    console.log("[SERVER] Transaction ID:", transactionId);
+    console.log("[SERVER] Ephemeral Public Key (first 50 chars):", ephemeralPublicKeyB64.substring(0, 50) + "...");
+
+    // Extract private key from merchant certificate
+    // The merchant certificate contains the private key we need for decryption
+    const keyPEM = applePayKey;
+    if (!keyPEM) {
+      throw new Error("Apple Pay private key not loaded");
+    }
+
+    // Parse the private key - it should be in PEM format
+    const keyObj = KJUR.KEYUTIL.getKey(keyPEM);
+    if (!keyObj) {
+      throw new Error("Failed to parse Apple Pay private key");
+    }
+
+    console.log("[SERVER] ✓ Apple Pay private key loaded successfully");
+
+    // Convert ephemeral public key from base64
+    const ephemeralPublicKeyDER = Buffer.from(ephemeralPublicKeyB64, "base64");
+
+    // Perform ECDH key agreement to derive the shared secret
+    // Create a temporary key pair from the ephemeral public key
+    const ec = crypto.createECDH("prime256v1");
+    const privateKeyDER = keyObj.getPrivateKeyAsHex();
+
+    // Derive shared secret using ECDH
+    ec.setPrivateKey(Buffer.from(privateKeyDER, "hex"));
+    const sharedSecret = ec.computeSecret(ephemeralPublicKeyDER);
+
+    console.log("[SERVER] ✓ ECDH key agreement completed");
+
+    // Key derivation using KDF (Key Derivation Function)
+    // Apple Pay uses SHA256 for KDF
+    const kdfAlgorithm = Buffer.from("id-aes256-GCM", "utf8");
+    const kdfInput = Buffer.concat([
+      Buffer.from([0, 0, 0, 1]),
+      sharedSecret,
+      Buffer.from([0, 0, 0, 20]),
+      kdfAlgorithm,
+    ]);
+
+    const derivedKey = crypto.createHash("sha256").update(kdfInput).digest();
+    console.log("[SERVER] ✓ Key derivation completed");
+
+    // Decrypt the data using AES-256-GCM
+    // The encrypted data format is: IV (16 bytes) + ciphertext + tag (16 bytes)
+    const iv = encryptedData.slice(0, 16);
+    const ciphertext = encryptedData.slice(16, encryptedData.length - 16);
+    const tag = encryptedData.slice(encryptedData.length - 16);
+
+    const decipher = crypto.createDecipheriv("aes-256-gcm", derivedKey, iv);
+    decipher.setAuthTag(tag);
+
+    let decrypted = decipher.update(ciphertext);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+    console.log("[SERVER] ✓ AES-256-GCM decryption completed");
+
+    // Parse the decrypted data as JSON
+    const decryptedData = JSON.parse(decrypted.toString("utf8"));
+
+    console.log("[SERVER] ✓ Decrypted token data:");
+    console.log("[SERVER] - applicationPrimaryAccountNumber (DPAN):", decryptedData.applicationPrimaryAccountNumber ? "✓ PRESENT" : "✗ MISSING");
+    console.log("[SERVER] - applicationExpirationDate:", decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING");
+    console.log("[SERVER] - onlinePaymentCryptogram:", decryptedData.onlinePaymentCryptogram ? "✓ PRESENT (length: " + decryptedData.onlinePaymentCryptogram.length + ")" : "✗ MISSING");
+    console.log("[SERVER] - eciIndicator:", decryptedData.eciIndicator || "N/A");
+
     return {
       success: true,
-      tokenData: tokenObj,
-      transactionId: header.transactionId,
+      decryptedData: decryptedData,
+      transactionId: transactionId,
+      dpan: decryptedData.applicationPrimaryAccountNumber,
+      expiry: decryptedData.applicationExpirationDate,
+      cryptogram: decryptedData.onlinePaymentCryptogram,
+      eciIndicator: decryptedData.eciIndicator,
+      cryptogramFormat: "3DSECURE",
     };
   } catch (error) {
     console.error("[SERVER] ERROR decrypting Apple Pay token:", error.message);
+    console.error("[SERVER] Stack:", error.stack);
     return {
       success: false,
       error: error.message,
@@ -777,6 +838,99 @@ app.post("/api/process-apple-pay", async (req, res) => {
       paymentDataString.length
     );
 
+    // ========== SERVER-SIDE DECRYPTION ==========
+    // Try to decrypt the Apple Pay token on our server
+    console.log("[SERVER] Attempting server-side token decryption...");
+    const decryptionResult = decryptApplePayToken(paymentToken.paymentData, merchantIdCert);
+
+    let paymentPayload;
+
+    if (decryptionResult.success) {
+      // ✓ Decryption successful - use decrypted card details
+      console.log("[SERVER] ✓ Token decrypted successfully - using decrypted card details");
+
+      const dpan = decryptionResult.dpan;
+      const expiry = decryptionResult.expiry; // Format: YYMMDD
+
+      // Parse expiry date
+      let expiryMonth = "01";
+      let expiryYear = "25";
+      if (expiry && expiry.length >= 4) {
+        expiryYear = expiry.substring(0, 2);
+        expiryMonth = expiry.substring(2, 4);
+      }
+
+      console.log("[SERVER] Extracted card details from decrypted token:");
+      console.log("[SERVER] - DPAN:", dpan ? dpan.substring(0, 6) + "......" : "N/A");
+      console.log("[SERVER] - Expiry:", expiryMonth + "/" + expiryYear);
+
+      // Build payload with decrypted card details (server-decrypted approach)
+      paymentPayload = {
+        apiOperation: "PAY",
+        order: {
+          amount: parseFloat(amount).toFixed(2),
+          currency: currency,
+          description: "Apple Pay Payment from UIC",
+          walletProvider: "APPLE_PAY",
+        },
+        sourceOfFunds: {
+          type: "CARD",
+          provided: {
+            card: {
+              number: dpan, // Device Primary Account Number
+              expiry: {
+                month: expiryMonth,
+                year: expiryYear,
+              },
+              devicePayment: {
+                cryptogramFormat: decryptionResult.cryptogramFormat,
+                onlinePaymentCryptogram: decryptionResult.cryptogram,
+                eciIndicator: decryptionResult.eciIndicator || "20",
+              },
+            },
+          },
+        },
+        device: {
+          ani: "12341234", // Example ANI
+        },
+        transaction: {
+          source: "INTERNET",
+        },
+      };
+
+      console.log("[SERVER] Built payload with decrypted card details");
+    } else {
+      // ✗ Decryption failed - fall back to encrypted token
+      console.warn("[SERVER] ✗ Server-side decryption failed:", decryptionResult.error);
+      console.warn("[SERVER] Falling back to encrypted token (gateway-decrypted approach)");
+
+      // Build payload with encrypted token (gateway will decrypt)
+      paymentPayload = {
+        apiOperation: "PAY",
+        order: {
+          amount: parseFloat(amount).toFixed(2),
+          currency: currency,
+          description: "Apple Pay Payment from UIC",
+          walletProvider: "APPLE_PAY",
+        },
+        sourceOfFunds: {
+          type: "CARD",
+          provided: {
+            card: {
+              devicePayment: {
+                paymentToken: paymentDataString,
+              },
+            },
+          },
+        },
+        transaction: {
+          source: "INTERNET",
+        },
+      };
+
+      console.log("[SERVER] Built payload with encrypted token (fallback)");
+    }
+
     // Send payment to Eazypay for authorization
     console.log("[SERVER] Sending payment to Eazypay for authorization...");
 
@@ -794,36 +948,10 @@ app.post("/api/process-apple-pay", async (req, res) => {
       "Basic " +
       Buffer.from(`${username}:${eazypayPassword}`).toString("base64");
 
-    // Create payment authorization request to Eazypay with Apple Pay token
-    // According to Eazypay docs, sourceOfFunds.type should be "CARD" for Apple Pay
-    // and the token should be in sourceOfFunds.provided.card.devicePayment.paymentToken
-    const paymentPayload = {
-      apiOperation: "PAY",
-      order: {
-        amount: parseFloat(amount).toFixed(2),
-        currency: currency,
-        description: "Apple Pay Payment from UIC",
-        walletProvider: "APPLE_PAY",
-      },
-      sourceOfFunds: {
-        type: "CARD",
-        provided: {
-          card: {
-            devicePayment: {
-              paymentToken: paymentDataString,
-            },
-          },
-        },
-      },
-      transaction: {
-        source: "INTERNET",
-      },
-    };
-
     console.log("[SERVER] Eazypay Payment Request URL:", authUrl);
     console.log("[SERVER] Transaction ID:", transactionId);
     console.log("[SERVER] Order ID:", eazypayOrderId);
-    console.log("[SERVER] Sending Apple Pay token to Eazypay...");
+    console.log("[SERVER] Sending Apple Pay payment to Eazypay...");
     console.log("[SERVER] Payload:", JSON.stringify(paymentPayload, null, 2));
 
     const eazypayResponse = await fetch(authUrl, {
