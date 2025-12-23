@@ -673,10 +673,17 @@ app.post("/api/process-apple-pay", async (req, res) => {
     }
 
     console.log("[SERVER] ✓ Payment token received from Apple Pay");
+    console.log("[SERVER] Token object keys:", Object.keys(paymentToken));
     console.log(
       "[SERVER] Token type:",
       paymentToken.paymentMethod ? "Has paymentMethod" : "Unknown"
     );
+    
+    // Log token structure for debugging
+    console.log("[SERVER] Full token structure:");
+    console.log("[SERVER] - paymentMethod:", paymentToken.paymentMethod ? "EXISTS" : "MISSING");
+    console.log("[SERVER] - paymentData:", paymentToken.paymentData ? "EXISTS (length: " + paymentToken.paymentData.length + ")" : "MISSING");
+    console.log("[SERVER] - transactionIdentifier:", paymentToken.transactionIdentifier ? "EXISTS" : "MISSING");
 
     // Send payment to Eazypay for authorization
     console.log("[SERVER] Sending payment to Eazypay for authorization...");
@@ -696,6 +703,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
       Buffer.from(`${username}:${eazypayPassword}`).toString("base64");
 
     // Create payment authorization request to Eazypay with Apple Pay token
+    // The token should have paymentData which is the encrypted Apple Pay token
     const paymentPayload = {
       apiOperation: "AUTHORIZE",
       order: {
@@ -707,15 +715,8 @@ app.post("/api/process-apple-pay", async (req, res) => {
       sourceOfFunds: {
         type: "APPLE_PAY",
         provided: {
-          applePayToken: JSON.stringify({
-            header: paymentToken.header,
-            signature: paymentToken.signature,
-            data: paymentToken.data,
-          }),
+          applePayToken: paymentToken.paymentData || JSON.stringify(paymentToken),
         },
-      },
-      deviceFingerprint: {
-        provider: "DIGITAL_INSIGHT",
       },
     };
 
