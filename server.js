@@ -19,13 +19,9 @@ function loadCertificates() {
   // Try to load from environment variables (for Render)
   if (process.env.APPLE_PAY_CERT) {
     try {
-      const derBuffer = Buffer.from(process.env.APPLE_PAY_CERT, "base64");
-      // Convert DER to PEM format
-      const derBase64 = derBuffer.toString("base64");
-      applePayCert = "-----BEGIN CERTIFICATE-----\n" +
-        derBase64.match(/.{1,64}/g).join("\n") + "\n" +
-        "-----END CERTIFICATE-----";
-      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment and converted to PEM");
+      // Environment variable should contain the PEM-formatted certificate text
+      applePayCert = process.env.APPLE_PAY_CERT;
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment");
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading APPLE_PAY_CERT from env:",
@@ -48,13 +44,9 @@ function loadCertificates() {
 
   if (process.env.MERCHANT_ID_CERT) {
     try {
-      const derBuffer = Buffer.from(process.env.MERCHANT_ID_CERT, "base64");
-      // Convert DER to PEM format
-      const derBase64 = derBuffer.toString("base64");
-      merchantIdCert = "-----BEGIN CERTIFICATE-----\n" +
-        derBase64.match(/.{1,64}/g).join("\n") + "\n" +
-        "-----END CERTIFICATE-----";
-      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment and converted to PEM");
+      // Environment variable should contain the PEM-formatted certificate text
+      merchantIdCert = process.env.MERCHANT_ID_CERT;
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment");
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading MERCHANT_ID_CERT from env:",
@@ -90,6 +82,24 @@ function loadCertificates() {
   // Try to load from local files (for development)
   if (
     !applePayCert &&
+    fs.existsSync(path.join(__dirname, "certs", "apple_pay.pem"))
+  ) {
+    try {
+      applePayCert = fs.readFileSync(
+        path.join(__dirname, "certs", "apple_pay.pem"),
+        "utf8"
+      );
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from local PEM file");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading local apple_pay.pem:",
+        error.message
+      );
+    }
+  }
+
+  if (
+    !applePayCert &&
     fs.existsSync(path.join(__dirname, "certs", "apple_pay.cer"))
   ) {
     try {
@@ -119,6 +129,24 @@ function loadCertificates() {
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading local paymentprocessing.key:",
+        error.message
+      );
+    }
+  }
+
+  if (
+    !merchantIdCert &&
+    fs.existsSync(path.join(__dirname, "certs", "merchant_id.pem"))
+  ) {
+    try {
+      merchantIdCert = fs.readFileSync(
+        path.join(__dirname, "certs", "merchant_id.pem"),
+        "utf8"
+      );
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from local PEM file");
+    } catch (error) {
+      console.error(
+        "[SERVER] ERROR loading local merchant_id.pem:",
         error.message
       );
     }
