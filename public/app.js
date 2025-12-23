@@ -140,6 +140,9 @@ async function initiateApplePayment() {
     const session = new ApplePaySession(3, request);
     console.log("[PAYMENT] ✓ ApplePaySession created");
 
+    // Variable to store orderId from merchant validation
+    let orderIdForPayment = null;
+
     // Handle validation event - simplified for testing
     session.onvalidatemerchant = async (event) => {
       console.log("[PAYMENT] ========== MERCHANT VALIDATION ==========");
@@ -166,6 +169,10 @@ async function initiateApplePayment() {
         if (data.success && data.session) {
           // Extract session fields that Apple requires
           const sessionData = data.session;
+
+          // Store the orderId for use in payment processing
+          orderIdForPayment = data.orderId;
+          console.log("[PAYMENT] Order ID received:", orderIdForPayment);
 
           console.log("[PAYMENT] Session fields:");
           console.log(
@@ -262,6 +269,7 @@ async function initiateApplePayment() {
             currency: CURRENCY,
             paymentData: JSON.stringify(paymentData),
             source: "apple_pay_native",
+            orderId: orderIdForPayment,
           }),
         });
 
