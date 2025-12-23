@@ -19,11 +19,13 @@ function loadCertificates() {
   // Try to load from environment variables (for Render)
   if (process.env.APPLE_PAY_CERT) {
     try {
-      applePayCert = Buffer.from(
-        process.env.APPLE_PAY_CERT,
-        "base64"
-      ).toString();
-      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment");
+      const derBuffer = Buffer.from(process.env.APPLE_PAY_CERT, "base64");
+      // Convert DER to PEM format
+      const derBase64 = derBuffer.toString("base64");
+      applePayCert = "-----BEGIN CERTIFICATE-----\n" +
+        derBase64.match(/.{1,64}/g).join("\n") + "\n" +
+        "-----END CERTIFICATE-----";
+      console.log("[SERVER] ✓ Loaded APPLE_PAY_CERT from environment and converted to PEM");
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading APPLE_PAY_CERT from env:",
@@ -46,11 +48,13 @@ function loadCertificates() {
 
   if (process.env.MERCHANT_ID_CERT) {
     try {
-      merchantIdCert = Buffer.from(
-        process.env.MERCHANT_ID_CERT,
-        "base64"
-      ).toString();
-      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment");
+      const derBuffer = Buffer.from(process.env.MERCHANT_ID_CERT, "base64");
+      // Convert DER to PEM format
+      const derBase64 = derBuffer.toString("base64");
+      merchantIdCert = "-----BEGIN CERTIFICATE-----\n" +
+        derBase64.match(/.{1,64}/g).join("\n") + "\n" +
+        "-----END CERTIFICATE-----";
+      console.log("[SERVER] ✓ Loaded MERCHANT_ID_CERT from environment and converted to PEM");
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading MERCHANT_ID_CERT from env:",
@@ -67,8 +71,14 @@ function loadCertificates() {
       ).toString();
       console.log("[SERVER] ✓ Loaded MERCHANT_ID_KEY from environment");
       console.log("[SERVER] MERCHANT_ID_KEY length:", merchantIdKey.length);
-      console.log("[SERVER] MERCHANT_ID_KEY first 50 chars:", merchantIdKey.substring(0, 50));
-      console.log("[SERVER] MERCHANT_ID_KEY last 50 chars:", merchantIdKey.substring(merchantIdKey.length - 50));
+      console.log(
+        "[SERVER] MERCHANT_ID_KEY first 50 chars:",
+        merchantIdKey.substring(0, 50)
+      );
+      console.log(
+        "[SERVER] MERCHANT_ID_KEY last 50 chars:",
+        merchantIdKey.substring(merchantIdKey.length - 50)
+      );
     } catch (error) {
       console.error(
         "[SERVER] ERROR loading MERCHANT_ID_KEY from env:",
@@ -422,9 +432,15 @@ app.post("/api/apple-pay-session", async (req, res) => {
 
       // Log certificate/key info for diagnostics
       console.log("[SERVER] MERCHANT_ID_CERT length:", merchantIdCert.length);
-      console.log("[SERVER] MERCHANT_ID_CERT first 60 chars:", merchantIdCert.substring(0, 60));
+      console.log(
+        "[SERVER] MERCHANT_ID_CERT first 60 chars:",
+        merchantIdCert.substring(0, 60)
+      );
       console.log("[SERVER] MERCHANT_ID_KEY length:", merchantIdKey.length);
-      console.log("[SERVER] MERCHANT_ID_KEY first 60 chars:", merchantIdKey.substring(0, 60));
+      console.log(
+        "[SERVER] MERCHANT_ID_KEY first 60 chars:",
+        merchantIdKey.substring(0, 60)
+      );
 
       // Use Node.js https module to send client certificate
       const httpsOptions = {
