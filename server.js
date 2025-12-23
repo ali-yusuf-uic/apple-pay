@@ -235,30 +235,112 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
     console.log("[SERVER] Ephemeral Public Key (first 50 chars):", ephemeralPublicKeyB64.substring(0, 50) + "...");
 
     // Extract private key from merchant certificate
-    // The merchant certificate contains the private key we need for decryption
     const keyPEM = applePayKey;
     if (!keyPEM) {
       throw new Error("Apple Pay private key not loaded");
     }
 
-    // Parse the private key - it should be in PEM format
-    const keyObj = KJUR.KEYUTIL.getKey(keyPEM);
-    if (!keyObj) {
-      throw new Error("Failed to parse Apple Pay private key");
+    // Parse the private key using jsrsasign
+    let keyObj;
+    try {
+      keyObj = KJUR.KEYUTIL.getKey(keyPEM);
+    } catch (e) {
+      // If jsrsasign fails, try using Node's crypto directly
+      console.log("[SERVER] Falling back to Node.js crypto module...");
+      
+      // Extract the private key hex directly from PEM
+      // For EC P-256 keys, we can use Node's crypto module
+      const ec = crypto.createECDH("prime256v1");
+      
+      // Parse PEM and extract key data
+      const keyLines = keyPEM.split('\n');
+      let keyData = '';
+      for (let line of keyLines) {
+        if (line.indexOf('-----') === -1 && line.trim().length > 0) {
+          keyData += line;
+        }
+      }
+      
+      const keyDER = Buffer.from(keyData, 'base64');
+      // EC P-256 private key is typically 32 bytes
+      // This is a simplified extraction - in production use a proper ASN.1 parser
+      const privateKeyBytes = keyDER.slice(keyDER.length - 32);
+      
+      ec.setPrivateKey(privateKeyBytes);
+      
+      console.log("[SERVER] ✓ Apple Pay private key loaded successfully (via Node.js crypto)");
+      
+      // Convert ephemeral public key from base64
+      const ephemeralPublicKeyDER = Buffer.from(ephemeralPublicKeyB64, "base64");
+      
+      // Perform ECDH key agreement
+      const sharedSecret = ec.computeSecret(ephemeralPublicKeyDER);
+      console.log("[SERVER] ✓ ECDH key agreement completed");
+
+      // Key derivation using KDF (Key Derivation Function)
+      const kdfAlgorithm = Buffer.from("id-aes256-GCM", "utf8");
+      const kdfInput = Buffer.concat([
+        Buffer.from([0, 0, 0, 1]),
+        sharedSecret,
+        Buffer.from([0, 0, 0, 20]),
+        kdfAlgorithm,
+      ]);
+
+      const derivedKey = crypto.createHash("sha256").update(kdfInput).digest();
+      console.log("[SERVER] ✓ Key derivation completed");
+
+      // Decrypt the data using AES-256-GCM
+      const iv = encryptedData.slice(0, 16);
+      const ciphertext = encryptedData.slice(16, encryptedData.length - 16);
+      const tag = encryptedData.slice(encryptedData.length - 16);
+
+      const decipher = crypto.createDecipheriv("aes-256-gcm", derivedKey, iv);
+      decipher.setAuthTag(tag);
+
+      let decrypted = decipher.update(ciphertext);
+      decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+      console.log("[SERVER] ✓ AES-256-GCM decryption completed");
+
+      const decryptedData = JSON.parse(decrypted.toString("utf8"));
+
+      console.log("[SERVER] ✓ Decrypted token data:");
+      console.log("[SERVER] - applicationPrimaryAccountNumber (DPAN):", decryptedData.applicationPrimaryAccountNumber ? "✓ PRESENT" : "✗ MISSING");
+      console.log("[SERVER] - applicationExpirationDate:", decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING");
+      console.log("[SERVER] - onlinePaymentCryptogram:", decryptedData.onlinePaymentCryptogram ? "✓ PRESENT (length: " + decryptedData.onlinePaymentCryptogram.length + ")" : "✗ MISSING");
+      console.log("[SERVER] - eciIndicator:", decryptedData.eciIndicator || "N/A");
+
+      return {
+        success: true,
+        decryptedData: decryptedData,
+        transactionId: transactionId,
+        dpan: decryptedData.applicationPrimaryAccountNumber,
+        expiry: decryptedData.applicationExpirationDate,
+        cryptogram: decryptedData.onlinePaymentCryptogram,
+        eciIndicator: decryptedData.eciIndicator,
+        cryptogramFormat: "3DSECURE",
+      };
     }
 
+    // If keyObj was successfully created, use it
     console.log("[SERVER] ✓ Apple Pay private key loaded successfully");
 
     // Convert ephemeral public key from base64
     const ephemeralPublicKeyDER = Buffer.from(ephemeralPublicKeyB64, "base64");
 
     // Perform ECDH key agreement to derive the shared secret
-    // Create a temporary key pair from the ephemeral public key
     const ec = crypto.createECDH("prime256v1");
-    const privateKeyDER = keyObj.getPrivateKeyAsHex();
+    
+    // Get private key bytes from keyObj
+    // For jsrsasign, we need to extract the hex and convert it
+    const privateKeyHex = keyObj.prvKeyObj?.d?.toString(16) || keyObj.d?.toString(16);
+    if (!privateKeyHex) {
+      throw new Error("Failed to extract private key from keyObj");
+    }
+    
+    const privateKeyBytes = Buffer.from(privateKeyHex.padStart(64, '0'), 'hex');
+    ec.setPrivateKey(privateKeyBytes);
 
-    // Derive shared secret using ECDH
-    ec.setPrivateKey(Buffer.from(privateKeyDER, "hex"));
     const sharedSecret = ec.computeSecret(ephemeralPublicKeyDER);
 
     console.log("[SERVER] ✓ ECDH key agreement completed");
