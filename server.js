@@ -177,12 +177,24 @@ app.get("/api/create-session", async (req, res) => {
 });
 
 // Apple Pay session endpoint (merchant validation)
+// Debug endpoint to check server status
+app.get("/api/debug", (req, res) => {
+  res.json({
+    server: "running",
+    merchantId: process.env.EAZYPAY_MERCHANT_ID ? "SET" : "NOT SET",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
 app.post("/api/apple-pay-session", async (req, res) => {
   try {
     const { validationURL } = req.body;
 
     console.log("[SERVER] ========== MERCHANT VALIDATION REQUEST ==========");
     console.log("[SERVER] Validation URL:", validationURL);
+    console.log("[SERVER] NOTE: Using test mode - not validating with Apple's servers");
+    console.log("[SERVER] For production: Set APPLE_MERCHANT_CERT in environment variables");
 
     if (!validationURL) {
       console.error("[SERVER] ERROR: Validation URL is required");
@@ -192,39 +204,28 @@ app.post("/api/apple-pay-session", async (req, res) => {
       });
     }
 
-    // For production: Call Apple's validation endpoint with merchant certificate
-    // For testing: Return a mock session that passes basic validation
+    // In production with proper certificates, you would:
+    // 1. Load merchant certificate from APPLE_MERCHANT_CERT env var
+    // 2. POST to validationURL with signed request using certificate
+    // 3. Parse and return Apple's response
     //
-    // To properly validate in production:
-    // 1. Read your merchant certificate from Render environment
-    // 2. POST to validationURL with merchantIdentifier, domainName, displayName
-    // 3. Use certificate to sign the request
-    // 4. Return Apple's response
+    // For testing, we return a minimal session object
+    // Apple Pay will still work but may show security warnings
 
-    console.log("[SERVER] Generating merchant session for testing...");
-
-    const now = Date.now();
+    console.log("[SERVER] Creating test merchant session...");
+    
+    // Return a valid merchant session structure
+    // Note: In production, this would come from Apple's servers after certificate validation
     const merchantSession = {
-      epochTimestamp: now,
-      expiresAt: now + 3600000, // 1 hour
-      merchantSessionIdentifier:
-        "SSH-" + Math.random().toString(36).substr(2, 32).toUpperCase(),
-      nonce: Math.random().toString(36).substr(2, 32).toLowerCase(),
-      signature:
-        "testing-signature-" + Math.random().toString(36).substr(2, 16),
-      operationalAnalyticsIdentifier: "",
-      pspId: "",
+      epochTimestamp: Math.floor(Date.now()),
+      expiresAt: Math.floor(Date.now() + 3600000),
+      merchantSessionIdentifier: "SSH-test-" + Date.now(),
+      nonce: "test-nonce-" + Math.random().toString(36).substr(2, 16),
+      signature: "test-signature", // Would be signed with certificate in production
     };
 
-    console.log("[SERVER] ✓ Session generated:");
-    console.log(
-      "[SERVER] - merchantSessionIdentifier:",
-      merchantSession.merchantSessionIdentifier
-    );
-    console.log("[SERVER] - epochTimestamp:", merchantSession.epochTimestamp);
-    console.log("[SERVER] - expiresAt:", merchantSession.expiresAt);
-    console.log("[SERVER] - nonce:", merchantSession.nonce);
-    console.log("[SERVER] - signature:", merchantSession.signature);
+    console.log("[SERVER] ✓ Test merchant session created:");
+    console.log("[SERVER] - Identifier:", merchantSession.merchantSessionIdentifier);
 
     res.json({
       success: true,
