@@ -802,7 +802,6 @@ app.post("/api/process-apple-pay", async (req, res) => {
       order: {
         amount: parseFloat(amount).toFixed(2),
         currency: currency,
-        id: eazypayOrderId,
         description: "Apple Pay Payment from UIC",
         walletProvider: "APPLE_PAY",
       },
