@@ -678,12 +678,34 @@ app.post("/api/process-apple-pay", async (req, res) => {
       "[SERVER] Token type:",
       paymentToken.paymentMethod ? "Has paymentMethod" : "Unknown"
     );
-    
+
     // Log token structure for debugging
     console.log("[SERVER] Full token structure:");
-    console.log("[SERVER] - paymentMethod:", paymentToken.paymentMethod ? "EXISTS" : "MISSING");
-    console.log("[SERVER] - paymentData:", paymentToken.paymentData ? "EXISTS (length: " + paymentToken.paymentData.length + ")" : "MISSING");
-    console.log("[SERVER] - transactionIdentifier:", paymentToken.transactionIdentifier ? "EXISTS" : "MISSING");
+    console.log(
+      "[SERVER] - paymentMethod:",
+      paymentToken.paymentMethod ? "EXISTS" : "MISSING"
+    );
+    console.log(
+      "[SERVER] - paymentData:",
+      paymentToken.paymentData
+        ? "EXISTS (length: " + paymentToken.paymentData.length + ")"
+        : "MISSING"
+    );
+    console.log(
+      "[SERVER] - transactionIdentifier:",
+      paymentToken.transactionIdentifier ? "EXISTS" : "MISSING"
+    );
+
+    // Extract paymentData - this is the encrypted token for Eazypay
+    if (!paymentToken.paymentData) {
+      console.error("[SERVER] ERROR: paymentData missing from token");
+      return res.status(400).json({
+        success: false,
+        message: "Payment token missing paymentData",
+      });
+    }
+
+    console.log("[SERVER] Payment data length:", paymentToken.paymentData.length);
 
     // Send payment to Eazypay for authorization
     console.log("[SERVER] Sending payment to Eazypay for authorization...");
@@ -703,7 +725,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
       Buffer.from(`${username}:${eazypayPassword}`).toString("base64");
 
     // Create payment authorization request to Eazypay with Apple Pay token
-    // The token should have paymentData which is the encrypted Apple Pay token
+    // The token.paymentData is the encrypted Apple Pay PKPaymentToken
     const paymentPayload = {
       apiOperation: "AUTHORIZE",
       order: {
@@ -715,7 +737,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
       sourceOfFunds: {
         type: "APPLE_PAY",
         provided: {
-          applePayToken: paymentToken.paymentData || JSON.stringify(paymentToken),
+          applePayToken: paymentToken.paymentData,
         },
       },
     };
