@@ -207,6 +207,57 @@ function loadCertificates() {
   );
 }
 
+// Function to decrypt Apple Pay token
+// Apple Pay token is encrypted with Elliptic Curve Integrated Encryption Scheme (ECIES)
+// We need to decrypt it using our Apple Pay private key
+function decryptApplePayToken(encryptedToken) {
+  try {
+    console.log("[SERVER] Starting Apple Pay token decryption...");
+
+    // The encryptedToken should be a JSON object with: data, signature, header, version
+    let tokenObj = encryptedToken;
+    if (typeof encryptedToken === "string") {
+      tokenObj = JSON.parse(encryptedToken);
+    }
+
+    if (!tokenObj.data || !tokenObj.header) {
+      throw new Error("Invalid token structure - missing data or header");
+    }
+
+    console.log("[SERVER] Token structure validated");
+    console.log("[SERVER] Token version:", tokenObj.version);
+
+    // For server-side decryption, we need the Apple Pay certificate's private key
+    // The decryption process is complex and requires:
+    // 1. Extract ephemeralPublicKey from header
+    // 2. Perform ECDH key agreement
+    // 3. Decrypt the data using AES-256-GCM
+
+    // For now, we'll extract what we can from the token
+    // In production, you would use Apple's decryption library or equivalent
+    
+    const header = tokenObj.header;
+    console.log("[SERVER] Transaction ID from token:", header.transactionId);
+    console.log("[SERVER] Ephemeral Public Key:", header.ephemeralPublicKey?.substring(0, 50) + "...");
+
+    // Since full ECIES decryption is complex without Apple's SDK,
+    // we'll use an alternative approach: send the token to Eazypay for decryption
+    // but with corrected field naming
+    
+    return {
+      success: true,
+      tokenData: tokenObj,
+      transactionId: header.transactionId,
+    };
+  } catch (error) {
+    console.error("[SERVER] ERROR decrypting Apple Pay token:", error.message);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.static("public"));
@@ -777,7 +828,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("[SERVER] Payload:", JSON.stringify(paymentPayload, null, 2));
 
     const eazypayResponse = await fetch(authUrl, {
-      method: "POST",
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: authorization,
