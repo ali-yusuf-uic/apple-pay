@@ -1,0 +1,122 @@
+"use client";
+import React from "react";
+import { handleCompleteFinal } from "@/utils/handleCompleteFinal";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+ 
+ 
+export default function ApplePayButton({
+  amount,
+  currency = "BHD",
+  lastFormData,
+  setconfirmpayment,
+}) {
+  const router = useRouter();
+  const orderId = `ORDER-${uuidv4().split("-")[0]}`;
+ 
+  async function startApplePay() {
+    if (!window.ApplePaySession) {
+      alert("Apple Pay is not supported on this device/browser.");
+      return;
+    }
+ 
+    const paymentRequest = {
+      countryCode: "BH",
+      currencyCode: currency,
+      supportedNetworks: ["visa", "mastercard", "amex", "mada"],
+      merchantCapabilities: ["supports3DS"],
+      total: {
+        label: "United Insurance",
+        amount:"0.010",
+      },
+    };
+ 
+    const session = new ApplePaySession(3, paymentRequest);
+ 
+ 
+ 
+    session.onvalidatemerchant = async (event) => {
+      try {
+        const res = await fetch("/api/apple-pay/validate-merchant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ validationURL: event.validationURL }),
+        });
+ 
+        const merchantSession = await res.json();
+ 
+        if (res.ok) {
+          session.completeMerchantValidation(merchantSession);
+        } else {
+          alert(
+            "Merchant validation failed: " +
+              (merchantSession.error || "Unknown error")
+          );
+          session.abort();
+        }
+      } catch (e) {
+        alert("Merchant validation error: " + e.message);
+        session.abort();
+      }
+    };
+ 
+    session.onpaymentauthorized = async (event) => {
+      try {
+        const paymentToken = event.payment.token.paymentData; // keep it raw (object)
+ 
+        const res = await fetch("/api/eazypay/apple-pay-authorize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentToken,
+            amount,
+            currency,
+            orderId,
+          }),
+        });
+ 
+        const result = await res.json();
+ 
+        if (res.ok) {
+          session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          handleCompleteFinal({
+            paymentMethod: "Apple-Pay",
+            transRefId: result?.order?.id || result?.transaction?.id || "",
+            paidAmount:Number(result?.order?.amount || result?.transaction?.amount) || 0,
+            cardRefNo: result?.sourceOfFunds?.provided?.card?.number || null,
+            lastFormData,
+            authCode: result?.transaction?.authorizationCode|| null,
+            router,
+            setconfirmpayment,
+          });
+        } else {
+          session.completePayment(ApplePaySession.STATUS_FAILURE);
+          router.push("/payment/error");
+        }
+      } catch (e) {
+        session.completePayment(ApplePaySession.STATUS_FAILURE);
+        router.push("/payment/error");
+      }
+    };
+ 
+    session.begin(); // 🔥 must run quickly after user click
+  }
+ 
+  return (
+    <button
+      onClick={startApplePay}
+      style={{
+        appearance: "-apple-pay-button",
+        WebkitAppearance: "-apple-pay-button", // 🔥 for Safari compatibility
+        ApplePayButtonType: "buy",
+        ApplePayButtonStyle: "black",
+        height: 50,
+        width: "100%",
+        borderRadius: 8,
+        cursor: "pointer",
+      }}
+    ></button>
+  );
+}
+ 
+ 

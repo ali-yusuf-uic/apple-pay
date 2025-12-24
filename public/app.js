@@ -242,21 +242,24 @@ async function initiateApplePayment() {
       showLoading("Processing Apple Pay payment...");
 
       try {
-        // Get the payment token from Apple
-        const paymentData = event.payment;
-        console.log("[PAYMENT] Payment data received:");
-        console.log("[PAYMENT] - Token:", paymentData.token ? "YES" : "NO");
+        // Get the payment token from Apple - ONLY the token.paymentData (the encrypted token)
+        const paymentToken = event.payment.token.paymentData;
+        console.log("[PAYMENT] Payment token received:");
         console.log(
-          "[PAYMENT] - Billing contact:",
-          paymentData.billingContact ? "YES" : "NO"
+          "[PAYMENT] - Token type:",
+          typeof paymentToken
         );
         console.log(
-          "[PAYMENT] - Shipping contact:",
-          paymentData.shippingContact ? "YES" : "NO"
+          "[PAYMENT] - Token keys:",
+          paymentToken ? Object.keys(paymentToken) : "NULL"
         );
         console.log(
-          "[PAYMENT] Full payment data:",
-          JSON.stringify(paymentData, null, 2)
+          "[PAYMENT] - Token has 'data' field:",
+          paymentToken?.data ? "YES" : "NO"
+        );
+        console.log(
+          "[PAYMENT] - Token has 'signature' field:",
+          paymentToken?.signature ? "YES" : "NO"
         );
 
         // Send to backend for processing
@@ -267,7 +270,7 @@ async function initiateApplePayment() {
           body: JSON.stringify({
             amount: TOTAL_AMOUNT,
             currency: CURRENCY,
-            paymentData: JSON.stringify(paymentData),
+            paymentData: paymentToken, // ✅ Send the encrypted token directly (as object, NOT stringified)
             source: "apple_pay_native",
             orderId: orderIdForPayment,
           }),

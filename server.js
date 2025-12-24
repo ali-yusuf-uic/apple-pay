@@ -623,11 +623,8 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("[SERVER] - Currency:", currency);
     console.log("[SERVER] - Order ID:", orderId);
     console.log("[SERVER] - Source:", source);
-    console.log(
-      "[SERVER] - Payment data size:",
-      paymentData ? paymentData.length : 0,
-      "bytes"
-    );
+    console.log("[SERVER] - Payment data type:", typeof paymentData);
+    console.log("[SERVER] - Payment data keys:", paymentData ? Object.keys(paymentData) : "NULL");
 
     if (!amount || !paymentData) {
       console.error("[SERVER] ERROR: Missing amount or payment data");
@@ -646,68 +643,36 @@ app.post("/api/process-apple-pay", async (req, res) => {
       });
     }
 
-    // Parse the payment data from Apple
+    // paymentData should already be an object with { data, signature, header, version }
+    // If it's a string, parse it
     let applePaymentData;
-    try {
-      applePaymentData =
-        typeof paymentData === "string" ? JSON.parse(paymentData) : paymentData;
-      console.log("[SERVER] ✓ Apple payment data parsed successfully");
-      console.log("[SERVER] Payment data keys:", Object.keys(applePaymentData));
-    } catch (error) {
-      console.error(
-        "[SERVER] ERROR: Failed to parse payment data:",
-        error.message
-      );
-      return res.status(400).json({
-        success: false,
-        message: "Invalid payment data format: " + error.message,
-      });
+    if (typeof paymentData === "string") {
+      try {
+        applePaymentData = JSON.parse(paymentData);
+        console.log("[SERVER] ✓ Parsed paymentData from string");
+      } catch (error) {
+        console.error("[SERVER] ERROR: Failed to parse payment data:", error.message);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid payment data format: " + error.message,
+        });
+      }
+    } else {
+      applePaymentData = paymentData;
+      console.log("[SERVER] ✓ PaymentData is already an object");
     }
 
-    // Get the payment token from Apple Pay
-    const paymentToken = applePaymentData.token;
-    if (!paymentToken) {
-      console.error("[SERVER] ERROR: No payment token in Apple Pay data");
-      console.error("[SERVER] Available keys:", Object.keys(applePaymentData));
-      return res.status(400).json({
-        success: false,
-        message: "No payment token received from Apple Pay",
-      });
-    }
+    console.log("[SERVER] Encrypted token keys:", Object.keys(applePaymentData));
+    console.log("[SERVER] Token has 'data':", applePaymentData?.data ? "YES" : "NO");
+    console.log("[SERVER] Token has 'signature':", applePaymentData?.signature ? "YES" : "NO");
+    console.log("[SERVER] Token has 'header':", applePaymentData?.header ? "YES" : "NO");
+    console.log("[SERVER] Token has 'version':", applePaymentData?.version ? "YES" : "NO");
 
-    console.log("[SERVER] ✓ Payment token received from Apple Pay");
-    console.log("[SERVER] Token object keys:", Object.keys(paymentToken));
-    console.log(
-      "[SERVER] Token type:",
-      paymentToken.paymentMethod ? "Has paymentMethod" : "Unknown"
-    );
-
-    // Extract paymentData - this is the encrypted token for Eazypay
-    if (!paymentToken.paymentData) {
-      console.error("[SERVER] ERROR: paymentData missing from token");
-      return res.status(400).json({
-        success: false,
-        message: "Payment token missing paymentData",
-      });
-    }
+    // Convert the entire encrypted token object to JSON string for Eazypay
+    const paymentDataString = JSON.stringify(applePaymentData);
 
     console.log(
-      "[SERVER] Using gateway-decrypted approach (Eazypay will decrypt)"
-    );
-    console.log(
-      "[SERVER] Payment data keys:",
-      Object.keys(paymentToken.paymentData)
-    );
-
-    // paymentData is an object with { data, signature, header, version }
-    // Eazypay expects the full paymentData as JSON string
-    const paymentDataString =
-      typeof paymentToken.paymentData === "string"
-        ? paymentToken.paymentData
-        : JSON.stringify(paymentToken.paymentData);
-
-    console.log(
-      "[SERVER] Payment data string length:",
+      "[SERVER] Encrypted token string length:",
       paymentDataString.length
     );
 
