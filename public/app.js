@@ -245,10 +245,7 @@ async function initiateApplePayment() {
         // Get the payment token from Apple - ONLY the token.paymentData (the encrypted token)
         const paymentToken = event.payment.token.paymentData;
         console.log("[PAYMENT] Payment token received:");
-        console.log(
-          "[PAYMENT] - Token type:",
-          typeof paymentToken
-        );
+        console.log("[PAYMENT] - Token type:", typeof paymentToken);
         console.log(
           "[PAYMENT] - Token keys:",
           paymentToken ? Object.keys(paymentToken) : "NULL"

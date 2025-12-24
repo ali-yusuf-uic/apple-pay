@@ -39,7 +39,7 @@ Copy the entire raw encrypted token from your Apple Pay response and paste it as
 
 ```json
 {
-  "apiOperation": "AUTHORIZE",
+  "apiOperation": "PAY",
   "order": {
     "amount": "0.01",
     "currency": "BHD",
@@ -77,7 +77,7 @@ Copy the entire raw encrypted token from your Apple Pay response and paste it as
 
 ```json
 {
-  "apiOperation": "AUTHORIZE",
+  "apiOperation": "PAY",
   "order": {
     "amount": "0.01",
     "currency": "BHD",
@@ -171,7 +171,7 @@ Ask Eazypay:
 
 ```json
 {
-  "apiOperation": "AUTHORIZE",
+  "apiOperation": "PAY",
   "order": {
     "amount": "0.01",
     "currency": "BHD",

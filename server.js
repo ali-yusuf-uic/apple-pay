@@ -300,7 +300,7 @@ app.get("/api/create-session", async (req, res) => {
     const payload = {
       apiOperation: "INITIATE_CHECKOUT",
       interaction: {
-        operation: "AUTHORIZE",
+        operation: "PAY",
         merchant: {
           name: "UIC - United Insurance Company",
           logo: "https://uic.bh/photos/EmailTemplate/UICLogo.png",
@@ -624,7 +624,10 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("[SERVER] - Order ID:", orderId);
     console.log("[SERVER] - Source:", source);
     console.log("[SERVER] - Payment data type:", typeof paymentData);
-    console.log("[SERVER] - Payment data keys:", paymentData ? Object.keys(paymentData) : "NULL");
+    console.log(
+      "[SERVER] - Payment data keys:",
+      paymentData ? Object.keys(paymentData) : "NULL"
+    );
 
     if (!amount || !paymentData) {
       console.error("[SERVER] ERROR: Missing amount or payment data");
@@ -651,7 +654,10 @@ app.post("/api/process-apple-pay", async (req, res) => {
         applePaymentData = JSON.parse(paymentData);
         console.log("[SERVER] ✓ Parsed paymentData from string");
       } catch (error) {
-        console.error("[SERVER] ERROR: Failed to parse payment data:", error.message);
+        console.error(
+          "[SERVER] ERROR: Failed to parse payment data:",
+          error.message
+        );
         return res.status(400).json({
           success: false,
           message: "Invalid payment data format: " + error.message,
@@ -662,11 +668,26 @@ app.post("/api/process-apple-pay", async (req, res) => {
       console.log("[SERVER] ✓ PaymentData is already an object");
     }
 
-    console.log("[SERVER] Encrypted token keys:", Object.keys(applePaymentData));
-    console.log("[SERVER] Token has 'data':", applePaymentData?.data ? "YES" : "NO");
-    console.log("[SERVER] Token has 'signature':", applePaymentData?.signature ? "YES" : "NO");
-    console.log("[SERVER] Token has 'header':", applePaymentData?.header ? "YES" : "NO");
-    console.log("[SERVER] Token has 'version':", applePaymentData?.version ? "YES" : "NO");
+    console.log(
+      "[SERVER] Encrypted token keys:",
+      Object.keys(applePaymentData)
+    );
+    console.log(
+      "[SERVER] Token has 'data':",
+      applePaymentData?.data ? "YES" : "NO"
+    );
+    console.log(
+      "[SERVER] Token has 'signature':",
+      applePaymentData?.signature ? "YES" : "NO"
+    );
+    console.log(
+      "[SERVER] Token has 'header':",
+      applePaymentData?.header ? "YES" : "NO"
+    );
+    console.log(
+      "[SERVER] Token has 'version':",
+      applePaymentData?.version ? "YES" : "NO"
+    );
 
     // Convert the entire encrypted token object to JSON string for Eazypay
     const paymentDataString = JSON.stringify(applePaymentData);
@@ -689,7 +710,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
     // Build payload with encrypted token - Eazypay will handle decryption
     // Format matches: https://eazypay.gateway.mastercard.com/api/documentation/integrationGuidelines/supportedFeatures/pickPaymentMethod/devicePayments/ApplePay.html
     const paymentPayload = {
-      apiOperation: "AUTHORIZE",
+      apiOperation: "PAY",
       order: {
         amount: parseFloat(amount).toFixed(2),
         currency: currency || "BHD",
@@ -710,7 +731,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
       },
     };
 
-    console.log("[SERVER] ✓ Built payload with encrypted token (AUTHORIZE)");
+    console.log("[SERVER] ✓ Built payload with encrypted token (PAY)");
     console.log("[EZPAY_REQUEST]", JSON.stringify(paymentPayload, null, 2));
 
     // Send payment to Eazypay for authorization
