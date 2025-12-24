@@ -945,27 +945,30 @@ app.post("/api/process-apple-pay", async (req, res) => {
       console.log("[SERVER] Extracted card details from decrypted token:");
       console.log("[SERVER] - DPAN:", dpan ? dpan.substring(0, 6) + "......" : "N/A");
       console.log("[SERVER] - Expiry:", expiryMonth + "/" + expiryYear);
+      console.log("[SERVER] - Cryptogram:", decryptionResult.cryptogram ? "PRESENT" : "MISSING");
+      console.log("[SERVER] - ECI Indicator:", decryptionResult.eciIndicator || "N/A");
 
       // Build payload with decrypted card details (server-decrypted approach)
+      // According to Eazypay spec: https://eazypay.gateway.mastercard.com/api/documentation/integrationGuidelines/supportedFeatures/pickPaymentMethod/devicePayments/ApplePay.html
+      // For server-side decryption, use AUTHORIZE or PAY with decrypted card fields
       paymentPayload = {
-        apiOperation: "PAY",
+        apiOperation: "AUTHORIZE", // Use AUTHORIZE for server-decrypted tokens (best practice)
         order: {
           amount: parseFloat(amount).toFixed(2),
           currency: currency,
-          description: "Apple Pay Payment from UIC",
           walletProvider: "APPLE_PAY",
         },
         sourceOfFunds: {
           type: "CARD",
           provided: {
             card: {
-              number: dpan, // Device Primary Account Number
+              number: dpan, // Device Primary Account Number (unmasked from decryption)
               expiry: {
                 month: expiryMonth,
                 year: expiryYear,
               },
               devicePayment: {
-                cryptogramFormat: decryptionResult.cryptogramFormat,
+                cryptogramFormat: "3DSECURE",
                 onlinePaymentCryptogram: decryptionResult.cryptogram,
                 eciIndicator: decryptionResult.eciIndicator || "20",
               },
@@ -973,14 +976,18 @@ app.post("/api/process-apple-pay", async (req, res) => {
           },
         },
         device: {
-          ani: "12341234", // Example ANI
+          ani: "12341234", // Anonymous ANI
+        },
+        posTerminal: {
+          location: "PAYER_TERMINAL_OFF_PREMISES", // As per Eazypay spec
         },
         transaction: {
           source: "INTERNET",
         },
       };
 
-      console.log("[SERVER] Built payload with decrypted card details");
+      console.log("[SERVER] ✓ Built payload with decrypted card details (AUTHORIZE)");
+      console.log("[EZPAY_REQUEST]", JSON.stringify(paymentPayload, null, 2));
     } else {
       // ✗ Decryption failed - fall back to encrypted token
       console.warn("[SERVER] ✗ Server-side decryption failed:", decryptionResult.error);
@@ -992,7 +999,6 @@ app.post("/api/process-apple-pay", async (req, res) => {
         order: {
           amount: parseFloat(amount).toFixed(2),
           currency: currency,
-          description: "Apple Pay Payment from UIC",
           walletProvider: "APPLE_PAY",
         },
         sourceOfFunds: {
@@ -1011,6 +1017,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
       };
 
       console.log("[SERVER] Built payload with encrypted token (fallback)");
+      console.log("[EZPAY_REQUEST]", JSON.stringify(paymentPayload, null, 2));
     }
 
     // Send payment to Eazypay for authorization
