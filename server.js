@@ -213,7 +213,9 @@ function loadCertificates() {
 // Reference: https://developer.apple.com/documentation/passkit/payment_token_format_reference
 function decryptApplePayToken(encryptedToken, merchantCert) {
   try {
-    console.log("[SERVER] Starting Apple Pay token decryption (server-side)...");
+    console.log(
+      "[SERVER] Starting Apple Pay token decryption (server-side)..."
+    );
 
     // Parse token if it's a string
     let tokenObj = encryptedToken;
@@ -232,7 +234,10 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
 
     console.log("[SERVER] Token version:", tokenObj.version);
     console.log("[SERVER] Transaction ID:", transactionId);
-    console.log("[SERVER] Ephemeral Public Key (first 50 chars):", ephemeralPublicKeyB64.substring(0, 50) + "...");
+    console.log(
+      "[SERVER] Ephemeral Public Key (first 50 chars):",
+      ephemeralPublicKeyB64.substring(0, 50) + "..."
+    );
 
     // Extract private key from merchant certificate
     const keyPEM = applePayKey;
@@ -247,32 +252,37 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
     } catch (e) {
       // If jsrsasign fails, try using Node's crypto directly
       console.log("[SERVER] Falling back to Node.js crypto module...");
-      
+
       // Extract the private key hex directly from PEM
       // For EC P-256 keys, we can use Node's crypto module
       const ec = crypto.createECDH("prime256v1");
-      
+
       // Parse PEM and extract key data
-      const keyLines = keyPEM.split('\n');
-      let keyData = '';
+      const keyLines = keyPEM.split("\n");
+      let keyData = "";
       for (let line of keyLines) {
-        if (line.indexOf('-----') === -1 && line.trim().length > 0) {
+        if (line.indexOf("-----") === -1 && line.trim().length > 0) {
           keyData += line;
         }
       }
-      
-      const keyDER = Buffer.from(keyData, 'base64');
+
+      const keyDER = Buffer.from(keyData, "base64");
       // EC P-256 private key is typically 32 bytes
       // This is a simplified extraction - in production use a proper ASN.1 parser
       const privateKeyBytes = keyDER.slice(keyDER.length - 32);
-      
+
       ec.setPrivateKey(privateKeyBytes);
-      
-      console.log("[SERVER] ✓ Apple Pay private key loaded successfully (via Node.js crypto)");
-      
+
+      console.log(
+        "[SERVER] ✓ Apple Pay private key loaded successfully (via Node.js crypto)"
+      );
+
       // Convert ephemeral public key from base64
-      const ephemeralPublicKeyDER = Buffer.from(ephemeralPublicKeyB64, "base64");
-      
+      const ephemeralPublicKeyDER = Buffer.from(
+        ephemeralPublicKeyB64,
+        "base64"
+      );
+
       // Perform ECDH key agreement
       const sharedSecret = ec.computeSecret(ephemeralPublicKeyDER);
       console.log("[SERVER] ✓ ECDH key agreement completed");
@@ -305,10 +315,28 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
       const decryptedData = JSON.parse(decrypted.toString("utf8"));
 
       console.log("[SERVER] ✓ Decrypted token data:");
-      console.log("[SERVER] - applicationPrimaryAccountNumber (DPAN):", decryptedData.applicationPrimaryAccountNumber ? "✓ PRESENT" : "✗ MISSING");
-      console.log("[SERVER] - applicationExpirationDate:", decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING");
-      console.log("[SERVER] - onlinePaymentCryptogram:", decryptedData.onlinePaymentCryptogram ? "✓ PRESENT (length: " + decryptedData.onlinePaymentCryptogram.length + ")" : "✗ MISSING");
-      console.log("[SERVER] - eciIndicator:", decryptedData.eciIndicator || "N/A");
+      console.log(
+        "[SERVER] - applicationPrimaryAccountNumber (DPAN):",
+        decryptedData.applicationPrimaryAccountNumber
+          ? "✓ PRESENT"
+          : "✗ MISSING"
+      );
+      console.log(
+        "[SERVER] - applicationExpirationDate:",
+        decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING"
+      );
+      console.log(
+        "[SERVER] - onlinePaymentCryptogram:",
+        decryptedData.onlinePaymentCryptogram
+          ? "✓ PRESENT (length: " +
+              decryptedData.onlinePaymentCryptogram.length +
+              ")"
+          : "✗ MISSING"
+      );
+      console.log(
+        "[SERVER] - eciIndicator:",
+        decryptedData.eciIndicator || "N/A"
+      );
 
       return {
         success: true,
@@ -330,15 +358,16 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
 
     // Perform ECDH key agreement to derive the shared secret
     const ec = crypto.createECDH("prime256v1");
-    
+
     // Get private key bytes from keyObj
     // For jsrsasign, we need to extract the hex and convert it
-    const privateKeyHex = keyObj.prvKeyObj?.d?.toString(16) || keyObj.d?.toString(16);
+    const privateKeyHex =
+      keyObj.prvKeyObj?.d?.toString(16) || keyObj.d?.toString(16);
     if (!privateKeyHex) {
       throw new Error("Failed to extract private key from keyObj");
     }
-    
-    const privateKeyBytes = Buffer.from(privateKeyHex.padStart(64, '0'), 'hex');
+
+    const privateKeyBytes = Buffer.from(privateKeyHex.padStart(64, "0"), "hex");
     ec.setPrivateKey(privateKeyBytes);
 
     const sharedSecret = ec.computeSecret(ephemeralPublicKeyDER);
@@ -376,10 +405,26 @@ function decryptApplePayToken(encryptedToken, merchantCert) {
     const decryptedData = JSON.parse(decrypted.toString("utf8"));
 
     console.log("[SERVER] ✓ Decrypted token data:");
-    console.log("[SERVER] - applicationPrimaryAccountNumber (DPAN):", decryptedData.applicationPrimaryAccountNumber ? "✓ PRESENT" : "✗ MISSING");
-    console.log("[SERVER] - applicationExpirationDate:", decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING");
-    console.log("[SERVER] - onlinePaymentCryptogram:", decryptedData.onlinePaymentCryptogram ? "✓ PRESENT (length: " + decryptedData.onlinePaymentCryptogram.length + ")" : "✗ MISSING");
-    console.log("[SERVER] - eciIndicator:", decryptedData.eciIndicator || "N/A");
+    console.log(
+      "[SERVER] - applicationPrimaryAccountNumber (DPAN):",
+      decryptedData.applicationPrimaryAccountNumber ? "✓ PRESENT" : "✗ MISSING"
+    );
+    console.log(
+      "[SERVER] - applicationExpirationDate:",
+      decryptedData.applicationExpirationDate ? "✓ PRESENT" : "✗ MISSING"
+    );
+    console.log(
+      "[SERVER] - onlinePaymentCryptogram:",
+      decryptedData.onlinePaymentCryptogram
+        ? "✓ PRESENT (length: " +
+            decryptedData.onlinePaymentCryptogram.length +
+            ")"
+        : "✗ MISSING"
+    );
+    console.log(
+      "[SERVER] - eciIndicator:",
+      decryptedData.eciIndicator || "N/A"
+    );
 
     return {
       success: true,
@@ -923,13 +968,18 @@ app.post("/api/process-apple-pay", async (req, res) => {
     // ========== SERVER-SIDE DECRYPTION ==========
     // Try to decrypt the Apple Pay token on our server
     console.log("[SERVER] Attempting server-side token decryption...");
-    const decryptionResult = decryptApplePayToken(paymentToken.paymentData, merchantIdCert);
+    const decryptionResult = decryptApplePayToken(
+      paymentToken.paymentData,
+      merchantIdCert
+    );
 
     let paymentPayload;
 
     if (decryptionResult.success) {
       // ✓ Decryption successful - use decrypted card details
-      console.log("[SERVER] ✓ Token decrypted successfully - using decrypted card details");
+      console.log(
+        "[SERVER] ✓ Token decrypted successfully - using decrypted card details"
+      );
 
       const dpan = decryptionResult.dpan;
       const expiry = decryptionResult.expiry; // Format: YYMMDD
@@ -943,10 +993,19 @@ app.post("/api/process-apple-pay", async (req, res) => {
       }
 
       console.log("[SERVER] Extracted card details from decrypted token:");
-      console.log("[SERVER] - DPAN:", dpan ? dpan.substring(0, 6) + "......" : "N/A");
+      console.log(
+        "[SERVER] - DPAN:",
+        dpan ? dpan.substring(0, 6) + "......" : "N/A"
+      );
       console.log("[SERVER] - Expiry:", expiryMonth + "/" + expiryYear);
-      console.log("[SERVER] - Cryptogram:", decryptionResult.cryptogram ? "PRESENT" : "MISSING");
-      console.log("[SERVER] - ECI Indicator:", decryptionResult.eciIndicator || "N/A");
+      console.log(
+        "[SERVER] - Cryptogram:",
+        decryptionResult.cryptogram ? "PRESENT" : "MISSING"
+      );
+      console.log(
+        "[SERVER] - ECI Indicator:",
+        decryptionResult.eciIndicator || "N/A"
+      );
 
       // Build payload with decrypted card details (server-decrypted approach)
       // According to Eazypay spec: https://eazypay.gateway.mastercard.com/api/documentation/integrationGuidelines/supportedFeatures/pickPaymentMethod/devicePayments/ApplePay.html
@@ -986,12 +1045,19 @@ app.post("/api/process-apple-pay", async (req, res) => {
         },
       };
 
-      console.log("[SERVER] ✓ Built payload with decrypted card details (AUTHORIZE)");
+      console.log(
+        "[SERVER] ✓ Built payload with decrypted card details (AUTHORIZE)"
+      );
       console.log("[EZPAY_REQUEST]", JSON.stringify(paymentPayload, null, 2));
     } else {
       // ✗ Decryption failed - fall back to encrypted token
-      console.warn("[SERVER] ✗ Server-side decryption failed:", decryptionResult.error);
-      console.warn("[SERVER] Falling back to encrypted token (gateway-decrypted approach)");
+      console.warn(
+        "[SERVER] ✗ Server-side decryption failed:",
+        decryptionResult.error
+      );
+      console.warn(
+        "[SERVER] Falling back to encrypted token (gateway-decrypted approach)"
+      );
 
       // Build payload with encrypted token (gateway will decrypt)
       paymentPayload = {
@@ -1049,7 +1115,9 @@ app.post("/api/process-apple-pay", async (req, res) => {
     console.log("URL:", authUrl);
     console.log("Headers:", {
       "Content-Type": "application/json",
-      Authorization: "Basic " + Buffer.from(`merchant.${eazypayMerchantId}:***`).toString("base64"),
+      Authorization:
+        "Basic " +
+        Buffer.from(`merchant.${eazypayMerchantId}:***`).toString("base64"),
     });
     console.log("Body:", JSON.stringify(paymentPayload, null, 2));
     console.log("[/EZPAY REQUEST]\n");
@@ -1065,12 +1133,15 @@ app.post("/api/process-apple-pay", async (req, res) => {
 
     console.log("[SERVER] Eazypay response status:", eazypayResponse.status);
     const eazypayData = await eazypayResponse.json();
-    
+
     // ========== EAZYPAY RESPONSE ==========
     console.log("\n[EZPAY RESPONSE]");
     console.log("Status Code:", eazypayResponse.status);
     console.log("Status Text:", eazypayResponse.statusText);
-    console.log("Headers:", Object.fromEntries(eazypayResponse.headers.entries()));
+    console.log(
+      "Headers:",
+      Object.fromEntries(eazypayResponse.headers.entries())
+    );
     console.log("Body:", JSON.stringify(eazypayData, null, 2));
     console.log("[/EZPAY RESPONSE]\n");
 
