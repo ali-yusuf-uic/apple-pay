@@ -714,7 +714,9 @@ app.post("/api/process-apple-pay", async (req, res) => {
     // ========== GATEWAY-DECRYPTED APPROACH ==========
     // Send encrypted token directly to Eazypay - Eazypay will decrypt it
     // This is simpler and matches Eazypay's official documentation example
-    console.log("[SERVER] Using gateway-decrypted approach (Eazypay will decrypt)");
+    console.log(
+      "[SERVER] Using gateway-decrypted approach (Eazypay will decrypt)"
+    );
 
     // Convert paymentData to JSON string if needed
     const paymentDataString =
@@ -723,11 +725,7 @@ app.post("/api/process-apple-pay", async (req, res) => {
         : JSON.stringify(paymentToken.paymentData);
 
     console.log("[SERVER] Encrypted payment token ready for Eazypay");
-    console.log(
-      "[SERVER] Token size:",
-      paymentDataString.length,
-      "bytes"
-    );
+    console.log("[SERVER] Token size:", paymentDataString.length, "bytes");
 
     // Build payload with encrypted token - Eazypay will handle decryption
     // Format matches: https://eazypay.gateway.mastercard.com/api/documentation/integrationGuidelines/supportedFeatures/pickPaymentMethod/devicePayments/ApplePay.html
