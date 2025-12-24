@@ -718,12 +718,6 @@ app.post("/api/process-apple-pay", async (req, res) => {
       "[SERVER] Using gateway-decrypted approach (Eazypay will decrypt)"
     );
 
-    // Convert paymentData to JSON string if needed
-    const paymentDataString =
-      typeof paymentToken.paymentData === "string"
-        ? paymentToken.paymentData
-        : JSON.stringify(paymentToken.paymentData);
-
     console.log("[SERVER] Encrypted payment token ready for Eazypay");
     console.log("[SERVER] Token size:", paymentDataString.length, "bytes");
 
