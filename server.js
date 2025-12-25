@@ -420,14 +420,14 @@ app.post("/api/apple-pay-session", async (req, res) => {
     // The new check is below after the validationURL check
 
     // Check if we have both certificate and key
-    if (!merchantIdCert || !merchantIdKey) {
-      console.warn(
-        "[SERVER] WARNING: MERCHANT_ID_CERT or MERCHANT_ID_KEY not loaded"
-      );
-      console.warn("[SERVER] Using mock session for testing");
-      console.warn(
-        "[SERVER] For production: Add MERCHANT_ID_CERT and MERCHANT_ID_KEY to Render environment variables"
-      );
+    // if (!merchantIdCert || !merchantIdKey) {
+    //   console.warn(
+    //     "[SERVER] WARNING: MERCHANT_ID_CERT or MERCHANT_ID_KEY not loaded"
+    //   );
+    //   console.warn("[SERVER] Using mock session for testing");
+    //   console.warn(
+    //     "[SERVER] For production: Add MERCHANT_ID_CERT and MERCHANT_ID_KEY to Render environment variables"
+    //   );
 
       // Return a test session
       const testSession = {
