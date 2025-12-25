@@ -12,7 +12,7 @@ Go to: **Render Dashboard → apple-pay service → Settings → Environment**
 
 **What is it?**: Payment Processing Certificate from Eazypay (apple_pay.cer)  
 **Valid until**: Jan 24, 2028  
-**Format**: Base64-encoded PEM certificate  
+**Format**: Base64-encoded PEM certificate
 
 ```
 LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3Q2dZSUtvWkl6ajBFQXdJd2dZQXhOREF5QmdOVkJBTU0KSzBGd2NHeGxJRmR2Y214a2QybGtaU0JFWlhabGJHOXdaWElnVW1Wc1lYUnBiMjV6SUVOQklDMGdSekl4SmpBawpCZ05WQkFzTUhVRndjR3hsSUVObGNuUnBabWxqWVhScGIyNGdRWFYwYUc5eWFYUjVNUk13RVFZRFZRUUtEQXBCCmNIQnNaU0JKYm1NdU1Rc3dDUVlEVlFRR0V3SlZVekFlRncweU5URXlNalV3TnpRd01qSmFGdzB5T0RBeE1qUXcKTnpRd01qRmFNSUhMTVM4d0xRWUtDWkltaVpQeUxHUUJBUXdmYldWeVkyaGhiblF1WTI5dExuVnBZeTV6WVcwdApkV2xqTFc5bVptVnljekZGTUVNR0ExVUVBd3c4UVhCd2JHVWdVR0Y1SUZCaGVXMWxiblFnVUhKdlkyVnpjMmx1Clp6cHRaWEpqYUdGdWRDNWpiMjB1ZFdsakxuTmhiUzExYVdNdGIyWm1aWEp6TVJNd0VRWURWUVFMREFwSU9FZEwKUXpaVVVGWlRNUzh3TFFZRFZRUUtEQ1pVU0VVZ1ZVNUpWRVZFSUVsT1UxVlNRVTVEUlNCRFQwMVFRVTVaSUVJdQpVeTVESUNoREtURUxNQWtHQTFVRUJoTUNRa2d3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVRrCjNVN1dwRUR6SG1EY3p4bkVUdlB6WGlUNThQK3NkKzdSWDRQeXNTbnBzMERlYVFPb2NkaUYxOE1oZEc4UnZsVEwKZVNlR2phenVSb3VqNnlOZ21Ld1NvNElDVlRDQ0FsRXdEQVlEVlIwVEFRSC9CQUl3QURBZkJnTlZIU01FR0RBVwpnQlNFdG9UTU9vWmljaFpabE9nYW83MUkzenJmQ3pCSEJnZ3JCZ0VGQlFjQkFRUTdNRGt3TndZSUt3WUJCUVVICk1BR0dLMmgwZEhBNkx5OXZZM053TG1Gd2NHeGxMbU52YlM5dlkzTnd4RGN0WVhCd2JHVjNkMlJ5WTJFeU1ERXcKZ2dFZEJnTlZIU0FFZ2dFVU1JSUJFRENDQVF3R0NTcUdTSWIzWTJRRkFUQ0IvakNCd3dZSUt3WUJCUVVIQWdJdwpnYllNZ2JOU1pXeHBZVzVqWlNCdmJpQjBhR2x6SUdObGNuUnBabWxqWVhSbElHSjVJR0Z1ZVNCd1lYSjBlU0JoCmMzTjFiV1Z6SUdGalkyVndkR0Z1WTJVZ2IyWWdkR2hsSUhSb1pXNGdZWEJ3YkdsallXSnNaU0J6ZEdGdVpHRnkKWkNCMFpYSnRjeUJoYm1RZ1kyOXVaR2wwYVc5dWN5QnZaaUIxYzJVc0lHTmxjblJwWm1sallYUmxJSEJ2YkdsagplU0JoYm1RZ1kyVnlkR2xtYVdOaGRHbHZiaUJ3Y21GamRHbGpaU0J6ZEdGMFpXMWxiblJ6TGpBMkJnZ3JCZ0VGCkJRY0NBUllxYUhSMGNEb3ZMM2QzZHk1aGNIQnNaUzVqYjIwdlkyVnlkR2xtYVdOaGRHVmhkWFJvYjNKcGRIa3YKTURZR0ExVWRId1F2TUMwd0s2QXBvQ2VHSldoMGRIQTZMeTlqY213dVlYQndiR1V1WTI5dEwyRndjR3hsZDNkawpjbU5oTWk1amNtd3dIUVlEVlIwT0JCWUVGS2ZKM3pkSFdaS3JjL2d1c21iU0xmMXU3dGsvTUE0R0ExVWREd0VCCi93UUVBd0lES0RCUEJna3Foa2lHOTJOa0JpQUVRZ3hBT1RJek1EWTFRVVU1UVVBNU1DVXpRVUpFTVRNek16UXkKTmpKQk5qY3lRMEpFTmpWR09USXpOekJGUWpneU9EY3pSamhGTWpKRlJrRXdNRU15TkRjNFJEQUtCZ2dxaGtqTwpQUVFEQWdOSUFEQkZBaUVBaHg0dUE0c2wydVdvOG1hQ2dVUnZCUXIwUlArdElNTkhCMWR2anExTnRPb0NJRUtFCkFCeFNBMnFNSXJiZWRrMGFJUjQ1bkR3MlpFMkxGZjVXZ3V1enN1amwKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
@@ -41,15 +41,19 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3
 ### Step-by-Step:
 
 1. **Go to Render Dashboard**
+
    - URL: https://dashboard.render.com
 
 2. **Select Your Service**
+
    - Click on "apple-pay" service
 
 3. **Open Settings**
+
    - Click "Settings" tab (top right)
 
 4. **Update Environment Variables**
+
    - Scroll to "Environment" section
    - You should see these variables listed:
      - `APPLE_PAY_CERT` ← **UPDATE THIS**
@@ -57,12 +61,14 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3
      - `EAZYPAY_PASSWORD` ← Keep as is
 
 5. **Edit APPLE_PAY_CERT**
+
    - Click the pencil (edit) icon next to `APPLE_PAY_CERT`
    - **Clear the current value completely**
    - **Paste the entire base64 string above** (copy from the code block)
    - Click "Save"
 
 6. **Wait for Redeploy**
+
    - Render will auto-redeploy (2-3 minutes)
    - You'll see a notification when deployment completes
 
@@ -74,12 +80,12 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3
 
 ## ✅ WHAT'S DIFFERENT FROM BEFORE?
 
-| Item | Before | Now | Why |
-|------|--------|-----|-----|
-| **APPLE_PAY_CERT** | Old certificate from Dec 22 | NEW certificate from Dec 25 | Eazypay issued new Payment Processing Certificate |
-| **MERCHANT_ID_CERT** | Set (but not used) | **REMOVE IF EXISTS** | Not needed for payment processing |
-| **MERCHANT_ID_KEY** | Set (but not used) | **REMOVE IF EXISTS** | Not needed for payment processing |
-| **APPLE_PAY_KEY** | Set (but not used) | **REMOVE IF EXISTS** | Eazypay handles all encryption |
+| Item                 | Before                      | Now                         | Why                                               |
+| -------------------- | --------------------------- | --------------------------- | ------------------------------------------------- |
+| **APPLE_PAY_CERT**   | Old certificate from Dec 22 | NEW certificate from Dec 25 | Eazypay issued new Payment Processing Certificate |
+| **MERCHANT_ID_CERT** | Set (but not used)          | **REMOVE IF EXISTS**        | Not needed for payment processing                 |
+| **MERCHANT_ID_KEY**  | Set (but not used)          | **REMOVE IF EXISTS**        | Not needed for payment processing                 |
+| **APPLE_PAY_KEY**    | Set (but not used)          | **REMOVE IF EXISTS**        | Eazypay handles all encryption                    |
 
 ---
 
@@ -94,6 +100,7 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3
 5. Then test the Apple Pay flow
 
 **Without this step**, you'll continue to see the error:
+
 ```
 "The payment token's public key does not match any configured"
 ```
@@ -115,16 +122,19 @@ LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUVtakNDQkVDZ0F3SUJBZ0lJZVhtMVo0Yzd3OGt3
 ## 🆘 TROUBLESHOOTING
 
 ### If you see: "The payment token's public key does not match..."
+
 - **Solution**: Eazypay hasn't registered the new certificate yet
 - **Action**: Contact Eazypay support to register EZPAY_CERT.pem
 
 ### If the frontend loads but Apple Pay doesn't appear
+
 - **Solution**: Browser may have cached old domain settings
 - **Action**: Hard refresh (Ctrl+F5) or clear cache
 
 ### If there's a 500 error on payment submit
+
 - **Solution**: Check Render logs
-- **Action**: 
+- **Action**:
   1. Go to Render dashboard
   2. Click "apple-pay" service
   3. Click "Logs" tab
